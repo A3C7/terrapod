@@ -376,7 +376,103 @@ test.describe('Responsive harness (phone viewport)', () => {
     await expect(page.getByText('Total', { exact: true })).toBeHidden();
     await expect(page.getByText('Locked', { exact: true })).toBeHidden();
     await expect(page.getByText('Health', { exact: true })).toBeVisible();
+    await expectNoHorizontalPageScroll(page);
+  });
 
+  test('grouped workspace tree stays within the phone at repo-path depth', async ({ page }) => {
+    // Grouping adds an interactive tree to the list (Group by repo / repo-path).
+    // A deep repo-path tree is the shape that pushes a table sideways on a
+    // phone — nested indentation plus a full table row — so it needs pinning
+    // that it does not introduce a horizontal page scroll, and that the
+    // per-row mobile status badge (the only status signal below `lg`) still
+    // renders inside a grouped row. The `?group=` URL param is the source of
+    // truth for the mode (localStorage is only a fallback), so a deep link
+    // opens straight into the grouped view without any interaction.
+    const token = getStoredToken();
+    // Unique repo basename + a shared name token: the repo makes this test's
+    // group distinct from any parallel spec's, and the `q=` name filter narrows
+    // the list to just these two rows so no other workspace bleeds into the
+    // tree (E2E isolation — never assert against the shared unfiltered list).
+    const slug = uniqueName('respgrp').replace(/[^a-z0-9]/gi, '').toLowerCase();
+    const repo = `https://github.com/org/${slug}.git`;
+    const wsRoot = `${slug}-root`;
+    const wsDeep = `${slug}-deep`;
+    await createWorkspace(token, wsRoot, { 'vcs-repo-url': repo });
+    await createWorkspace(token, wsDeep, {
+      'vcs-repo-url': repo,
+      'working-directory': 'environments/prod/us-east-1',
+    });
+
+    await page.goto(`/workspaces?q=${encodeURIComponent(slug)}&group=repo-path`);
+
+    // The mode came from the URL (not a stored default), and it survives.
+    await expect(page).toHaveURL(/[?&]group=repo-path/);
+
+    // The repo group header renders, labelled by the unique repo basename;
+    // below it the nested path segments are their own collapsible group rows.
+    // Match the header by its "<label>/" text (the trailing slash the tree
+    // renders) so the locator does not also catch the active filter pill,
+    // whose accessible name is "name: <slug>" (no trailing slash).
+    await expect(
+      page.getByRole('button', { name: new RegExp(`^${slug}/`) }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /^environments\// })).toBeVisible();
+
+    // The deep-nested workspace is reachable and carries its inline mobile
+    // status indicator inside the grouped row (preserved under grouping).
+    const deepRow = page.getByRole('row').filter({ hasText: wsDeep });
+    await expect(deepRow).toBeVisible();
+    await expect(deepRow.getByTestId('ws-row-status-mobile')).toBeVisible();
+
+    // The whole point: a deep tree must not push the page sideways on a phone.
+    await expectNoHorizontalPageScroll(page);
+  });
+
+  test('the run log pane reserves no height on touch (#1547, #722)', async ({ page }) => {
+    // #1547 reserves the pane's full height while a phase streams — with a
+    // precise pointer only. On touch the page is the scroll container (#722):
+    // no fixed-height box, no inner scrollbar. This project is a Pixel 7, so
+    // `pointer: coarse`, which is exactly the case the `fine:` gate must exclude.
+    const token = getStoredToken();
+    const wsId = await createWorkspace(token, uniqueName('resp-log'));
+    const runId = await seedRun(token, wsId);
+    const body = Array.from({ length: 40 }, (_, i) => `plan ${i}  Still reading...`).join('\n') + '\n';
+
+    await page.route(`**/api/v2/runs/${runId}`, async (route: Route) => {
+      const res = await route.fetch();
+      const json = await res.json();
+      json.data.attributes.status = 'planning';
+      await route.fulfill({ response: res, body: JSON.stringify(json) });
+    });
+    await page.route(`**/api/terrapod/v1/runs/${runId}/plan`, (route: Route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/vnd.api+json',
+        body: JSON.stringify({
+          data: { id: 'p', type: 'plans', attributes: { 'log-read-url': '/__e2e_resp_log', status: 'running' } },
+        }),
+      }));
+    await page.route('**/__e2e_resp_log*', (route: Route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/plain',
+        body: new URL(route.request().url()).searchParams.get('offset') === '0' ? body : '',
+      }));
+
+    await page.goto(`/workspaces/${wsId}/runs/${runId}?view=plan`);
+    const pre = page.getByTestId('log-pre-plan');
+    await expect(pre).toBeVisible({ timeout: 20_000 });
+
+    const reserved = await page
+      .getByTestId('log-reserve-plan')
+      .evaluate((el) => getComputedStyle(el).minHeight);
+    expect(reserved).toBe('0px');
+    const { overflowY, maxHeight } = await pre.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { overflowY: s.overflowY, maxHeight: s.maxHeight };
+    });
+    expect(overflowY).toBe('visible');
+    expect(maxHeight).toBe('none');
     await expectNoHorizontalPageScroll(page);
   });
 
