@@ -20,12 +20,23 @@ Two read shapes, because Vault's paths differ:
 
 Authentication is Kubernetes by default: Terrapod presents the API pod's own
 ServiceAccount token and Vault validates it, so there is no stored credential.
-Tokens are cached per instance until shortly before their lease expires.
+``jwt`` (#1650) presents a projected, audience-scoped ServiceAccount token that
+Vault validates against the cluster's OIDC discovery / JWKS, so a Vault outside
+the cluster never has to reach back in. Either way the token file is re-read on
+every login, because the kubelet rotates it. Vault tokens are cached per
+instance until shortly before their lease expires.
+
+TLS (#1650): an instance with ``ca_file`` is verified against that CA alone. One
+without it passes ``verify=True``, which is what lets httpx honour
+``SSL_CERT_FILE`` — the chart's global ``caBundle`` — and otherwise use certifi.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
+import os
+import ssl
 import time
 from pathlib import Path
 from urllib.parse import unquote
@@ -33,13 +44,13 @@ from urllib.parse import unquote
 import httpx
 import structlog
 
-from terrapod.config import VaultInstanceConfig
+from terrapod.config import VAULT_SA_TOKEN_PATH, VaultInstanceConfig
 from terrapod.http_retry import arequest_with_retry
 
 logger = structlog.get_logger("vault")
 
 #: Where the kubelet projects the pod's ServiceAccount token.
-SA_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+SA_TOKEN_PATH = VAULT_SA_TOKEN_PATH
 
 #: Renew this many seconds before a lease actually expires, so a long run does
 #: not start with a token that dies mid-resolution.
@@ -110,10 +121,55 @@ def _as_vault_error(exc: Exception, what: str, inst_name: str) -> VaultUnavailab
 
 _token_cache: dict[str, tuple[str, float]] = {}
 
+#: CA file path -> (mtime_ns it was loaded at, context). Keyed on mtime so a
+#: rotated CA Secret — remounted by the kubelet — is picked up without a restart.
+_ssl_cache: dict[str, tuple[int, ssl.SSLContext]] = {}
+
 
 def reset_token_cache() -> None:
-    """Drop cached Vault tokens (tests, and config reload)."""
+    """Drop cached Vault tokens and CA contexts (tests, and config reload)."""
     _token_cache.clear()
+    _ssl_cache.clear()
+
+
+def _load_ca_context(inst: VaultInstanceConfig) -> ssl.SSLContext:
+    """An SSLContext trusting only the instance's CA file. Sync: run in a thread."""
+    path = inst.ca_file
+    try:
+        mtime = os.stat(path).st_mtime_ns
+    except OSError as e:
+        raise VaultError(
+            f"could not read the CA file {path!r} for vault instance {inst.name!r}: {e}. "
+            "The chart mounts it from tls.ca_secret / tls.ca_key; check the Secret "
+            "exists and holds that key."
+        ) from e
+    cached = _ssl_cache.get(path)
+    if cached and cached[0] == mtime:
+        return cached[1]
+    try:
+        ctx = ssl.create_default_context(cafile=path)
+    except (OSError, ssl.SSLError) as e:
+        raise VaultError(
+            f"the CA file {path!r} for vault instance {inst.name!r} is not a usable "
+            f"PEM certificate bundle: {e}"
+        ) from e
+    _ssl_cache[path] = (mtime, ctx)
+    return ctx
+
+
+async def _verify_for(inst: VaultInstanceConfig) -> ssl.SSLContext | bool:
+    """The httpx ``verify=`` for this instance.
+
+    ``True`` rather than a context when no CA is configured, deliberately: that
+    is the value httpx turns into "honour SSL_CERT_FILE, else certifi", so the
+    chart's global caBundle keeps working for every instance that does not pin
+    its own CA.
+    """
+    if inst.tls_skip_verify:
+        return False
+    if not inst.ca_file:
+        return True
+    return await asyncio.to_thread(_load_ca_context, inst)
 
 
 def _headers(inst: VaultInstanceConfig, token: str | None = None) -> dict[str, str]:
@@ -125,16 +181,32 @@ def _headers(inst: VaultInstanceConfig, token: str | None = None) -> dict[str, s
     return h
 
 
-async def _read_sa_token() -> str:
-    """The pod's ServiceAccount JWT, read off the projected volume."""
+async def _read_sa_token(path: str = SA_TOKEN_PATH, method: str = "kubernetes") -> str:
+    """A ServiceAccount JWT, read off its projected volume.
+
+    Called on every login rather than cached: the kubelet rotates the file (a
+    `jwt` instance's token lives ten minutes), so a token read once at startup
+    would be expired by the second login.
+    """
     try:
-        return (await asyncio.to_thread(Path(SA_TOKEN_PATH).read_text)).strip()
+        token = (await asyncio.to_thread(Path(path).read_text)).strip()
     except OSError as e:
+        if method == "jwt" or path != SA_TOKEN_PATH:
+            raise VaultError(
+                f"could not read the projected ServiceAccount token at {path} for "
+                f"{method} auth: {e}. The chart projects it at "
+                "/var/run/secrets/terrapod/vault/<instance>/token when an instance "
+                "uses jwt (or kubernetes with an audience); check auth.token_path "
+                "and that Terrapod runs in-cluster."
+            ) from e
         raise VaultError(
-            f"could not read the ServiceAccount token at {SA_TOKEN_PATH}: {e}. "
+            f"could not read the ServiceAccount token at {path}: {e}. "
             "Kubernetes auth only works when Terrapod runs in-cluster; use the "
             "approle or token method otherwise."
         ) from e
+    if not token:
+        raise VaultError(f"the ServiceAccount token file at {path} is empty")
+    return token
 
 
 async def _login(inst: VaultInstanceConfig, static_token: str | None) -> str:
@@ -155,9 +227,12 @@ async def _login(inst: VaultInstanceConfig, static_token: str | None) -> str:
         return static_token
 
     base = inst.address.rstrip("/")
-    if method == "kubernetes":
+    if method in ("kubernetes", "jwt"):
+        # Same body for both: Vault's kubernetes and jwt login endpoints each
+        # take {role, jwt}. What differs is how Vault validates the token.
         url = f"{base}/v1/auth/{inst.auth.mount.strip('/')}/login"
-        payload = {"role": inst.auth.role, "jwt": await _read_sa_token()}
+        token_path = inst.auth.token_path or SA_TOKEN_PATH
+        payload = {"role": inst.auth.role, "jwt": await _read_sa_token(token_path, method)}
     elif method == "approle":
         if not static_token:
             raise VaultError(
@@ -168,15 +243,19 @@ async def _login(inst: VaultInstanceConfig, static_token: str | None) -> str:
     else:  # pragma: no cover - the config validator rejects anything else
         raise VaultError(f"unsupported vault auth method {method!r}")
 
+    verify = await _verify_for(inst)
     try:
-        async with httpx.AsyncClient(timeout=15.0, verify=not inst.tls_skip_verify) as c:
+        async with httpx.AsyncClient(timeout=15.0, verify=verify) as c:
             resp = await arequest_with_retry(c, "POST", url, headers=_headers(inst), json=payload)
     except (httpx.HTTPError, OSError) as e:
         raise _as_vault_error(e, "login", inst.name) from e
     if resp.status_code != 200:
+        # The audience is named because a jwt login rejected for a mismatched
+        # `aud` claim looks, from here, exactly like any other refusal.
+        audience = f", audience {inst.auth.audience!r}" if inst.auth.audience else ""
         detail = (
             f"Vault login failed for instance {inst.name!r} "
-            f"({method} auth, mount {inst.auth.mount!r}, role {inst.auth.role!r}): "
+            f"({method} auth, mount {inst.auth.mount!r}, role {inst.auth.role!r}{audience}): "
             f"HTTP {resp.status_code}"
         )
         if _is_transient_status(resp.status_code):
@@ -256,19 +335,25 @@ def _check_allowed(inst: VaultInstanceConfig, read_path: str) -> None:
     )
 
 
-async def read_secret(
+async def read_secret_data(
     inst: VaultInstanceConfig,
     *,
     mount: str,
     path: str,
-    field: str,
     engine: str = "kv2",
     method: str = "GET",
     data: dict | None = None,
     timeout: float = 10.0,
     static_token: str | None = None,
-) -> str:
-    """Read one field from Vault and return it, or raise :class:`VaultError`."""
+) -> dict:
+    """Read one secret and return its whole data map, or raise :class:`VaultError`.
+
+    kv-v2's ``data.data`` is unwrapped; a dynamic engine's ``data`` is returned
+    as it is. One call is one Vault request, and a dynamic engine mints a new
+    credential on every request — so a caller that needs several fields of one
+    credential (a certificate and its key, an access key and its secret) must
+    read once and take each field with :func:`extract_field` (#1619).
+    """
     mount_s, path_s = mount.strip("/"), path.strip("/")
     if not mount_s or not path_s:
         raise VaultError("a vault reference needs both a mount and a path")
@@ -285,8 +370,9 @@ async def read_secret(
     if engine == "kv2":
         verb = "GET"  # kv-v2 reads are always a GET, whatever the reference says
 
+    verify = await _verify_for(inst)
     try:
-        async with httpx.AsyncClient(timeout=timeout, verify=not inst.tls_skip_verify) as c:
+        async with httpx.AsyncClient(timeout=timeout, verify=verify) as c:
             resp = await arequest_with_retry(
                 c,
                 verb,
@@ -322,12 +408,63 @@ async def read_secret(
     except ValueError as e:
         raise _as_vault_error(e, f"read of {read_path!r}", inst.name) from e
     # kv-v2 nests the secret under data.data; the dynamic engines do not.
-    data = body.get("data") if engine == "kv2" else body
-    if not isinstance(data, dict) or field not in data:
-        available = sorted(data) if isinstance(data, dict) else []
+    secret = body.get("data") if engine == "kv2" else body
+    return secret if isinstance(secret, dict) else {}
+
+
+def secret_path(mount: str, path: str) -> str:
+    """The ``mount/path`` a reference names, as error messages show it."""
+    return f"{mount.strip('/')}/{path.strip('/')}"
+
+
+def extract_field(secret: dict, field: str, *, where: str) -> str:
+    """One field of a secret from :func:`read_secret_data`, as delivered.
+
+    Raises :class:`VaultError` naming the fields that *are* present — names
+    only, never a value. ``where`` is the ``mount/path`` for the message.
+    """
+    if not isinstance(secret, dict) or field not in secret:
+        available = sorted(secret) if isinstance(secret, dict) else []
         raise VaultError(
-            f"field {field!r} is not present at {read_path!r} "
+            f"field {field!r} is not present at {where!r} "
             f"(available: {', '.join(available) or 'none'})"
         )
-    value = data[field]
-    return value if isinstance(value, str) else str(value)
+    value = secret[field]
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (dict, list)):
+        # A map or list field (a service-account JSON document stored as an
+        # object, say) is delivered as JSON. str() gave a Python repr —
+        # single quotes, True/None — which no consumer can parse (#1619).
+        return json.dumps(value, ensure_ascii=False)
+    return str(value)
+
+
+async def read_secret(
+    inst: VaultInstanceConfig,
+    *,
+    mount: str,
+    path: str,
+    field: str,
+    engine: str = "kv2",
+    method: str = "GET",
+    data: dict | None = None,
+    timeout: float = 10.0,
+    static_token: str | None = None,
+) -> str:
+    """Read one field from Vault and return it, or raise :class:`VaultError`.
+
+    One request per call. For several fields of one secret, use
+    :func:`read_secret_data` once and :func:`extract_field` per field.
+    """
+    secret = await read_secret_data(
+        inst,
+        mount=mount,
+        path=path,
+        engine=engine,
+        method=method,
+        data=data,
+        timeout=timeout,
+        static_token=static_token,
+    )
+    return extract_field(secret, field, where=secret_path(mount, path))
