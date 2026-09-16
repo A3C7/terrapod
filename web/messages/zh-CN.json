@@ -34,7 +34,8 @@
     "closeMenu": "关闭菜单",
     "ha": "高可用",
     "deletedWorkspaces": "已删除的工作区",
-    "version": "版本 {version}"
+    "version": "版本 {version}",
+    "vault": "OpenBao/Vault 状态"
   },
   "switcher": {
     "language": "语言",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {注册 # 个模块} other {注册 # 个模块}}",
         "registering": "正在注册…",
         "failed": "扫描失败",
-        "ruleLink": "创建规则以自动注册新模块"
+        "ruleLink": "创建规则以自动注册新模块",
+        "orgNote": "此处仅显示第一页仓库。创建规则可覆盖每个仓库，包括之后创建的仓库。"
       },
       "versionCount": "{count, plural, one {# 个版本} other {# 个版本}}",
       "loadFailed": "加载模块失败",
@@ -755,7 +757,8 @@
       "deleteRole": "删除角色失败",
       "setAssignment": "设置分配失败",
       "setAssignmentStatus": "设置分配失败（{status}）",
-      "deleteAssignment": "删除分配失败"
+      "deleteAssignment": "删除分配失败",
+      "conflictingLabelKeys": "{keys} 被指定了多个值。标签规则每个键只保留一个值，因此最后一个会悄悄替换先前的值。API 支持一个键对应多个值，但此处尚不能设置。"
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "名称已被使用",
     "reasonMissingProvider": "无提供者",
     "confirmDelete": "删除规则 {name}？它注册的模块仍保持注册状态。",
-    "loadFailed": "无法加载模块自动发现规则"
+    "loadFailed": "无法加载模块自动发现规则",
+    "repoUrlHint": "一个仓库、一个组织或群组（其中的每个仓库），或针对某个组织或群组仓库的模式，例如 {example}。通配符只能出现在最后一段。Terrapod 会在您保存时判断类型，之后不会自行更改。",
+    "ownerPlaceholderHint": "覆盖某个组织或群组的规则还可以使用 <owner></owner>：即仓库的所有者或群组。",
+    "targetKind": {
+      "repository": "仓库",
+      "namespace": "组织或群组",
+      "pattern": "模式"
+    },
+    "attention": {
+      "badge": "需要关注",
+      "title": "{name} 需要关注",
+      "hint": "规则会在下一次注册表轮询时重试。如果其目标已被删除，请编辑该规则使其指向其他位置。"
+    },
+    "repoStatus": {
+      "active": "活动",
+      "archived": "已归档",
+      "empty": "空",
+      "noBranch": "无分支",
+      "outOfScope": "不在范围内",
+      "covered": "已覆盖",
+      "error": "错误"
+    },
+    "origin": {
+      "baseline": "基线",
+      "new": "新增"
+    },
+    "paging": {
+      "page": "第 {page} 页，共 {pages} 页",
+      "previous": "上一页",
+      "next": "下一页"
+    },
+    "repositories": {
+      "open": "仓库",
+      "title": "仓库：{ruleName}",
+      "lastListed": "上次列出于 {time}",
+      "notListed": "尚未列出。下一次注册表轮询会列出此规则的仓库。",
+      "legend": "基线仓库在规则创建之前就已存在，因此其中的内容在您从预览中选择之前不会注册。新增仓库是在规则创建之后创建的，其模块会自动注册。",
+      "filterLabel": "状态",
+      "filterAll": "所有状态",
+      "none": "暂无仓库。",
+      "noneWithStatus": "没有处于此状态的仓库。",
+      "loadFailed": "加载该规则的仓库失败",
+      "repository": "仓库",
+      "status": "状态",
+      "origin": "来源",
+      "candidates": "候选项",
+      "lastChecked": "上次检查",
+      "error": "错误",
+      "renamed": "重命名自",
+      "renamedFrom": "重命名自 {paths}",
+      "never": "从不",
+      "candidateCount": "{count, plural, other {# 个模块}}"
+    },
+    "grouped": {
+      "storedNote": "上一次注册表轮询在每个仓库中发现的内容。不会从 VCS 提供程序读取任何内容。",
+      "unsavedNote": "未保存的规则每次实时读取一页仓库。保存后轮询器将跟踪每个仓库。",
+      "incomplete": "此组织或群组的仓库数量超出了 Terrapod 一次列出的上限，因此部分仓库未显示。",
+      "selectRepository": "选择 {repository} 中的所有模块",
+      "noCandidates": "此处没有可注册的模块。",
+      "repositoryError": "无法读取此仓库：{error}",
+      "confirmRegisterAll": "注册此规则找到的所有模块？已注册的模块，或名称已被占用的模块，将被跳过。",
+      "scanRepositories": "{count, plural, other {已扫描 # 个仓库。}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "批量更新",
@@ -3248,5 +3313,60 @@
         "applying": "正在应用"
       }
     }
+  },
+  "adminVault": {
+    "title": "OpenBao/Vault 状态",
+    "description": "Terrapod 读取变量的每个 OpenBao（或 HashiCorp Vault）实例的健康状况、登录和 TLS 信任。每分钟采样一次；打开此页面从不连接服务器。",
+    "disabled": "此部署未启用 OpenBao/Vault 值来源。",
+    "notSampled": "尚未采样。首次采样会在 API 启动后一分钟内进行。",
+    "cacheUnreachable": "无法读取状态缓存，因此各实例的健康状况未知。",
+    "sampledAt": "采样于 {time}",
+    "refresh": "刷新",
+    "default": "默认",
+    "reachable": "可访问",
+    "unreachable": "不可访问",
+    "sealed": "已密封",
+    "unsealed": "已解封",
+    "notInitialized": "未初始化",
+    "standby": "备用",
+    "loginOk": "登录正常",
+    "loginFailed": "登录失败",
+    "unknown": "未知",
+    "address": "地址",
+    "namespace": "命名空间",
+    "authMethod": "认证方式",
+    "tlsTrust": "TLS 信任",
+    "version": "版本",
+    "tokenTtl": "令牌 TTL",
+    "checkedAt": "检查时间",
+    "lastError": "最近一次解析错误",
+    "noLastError": "无记录",
+    "lastErrorLine": "{time} 发生 {kind}",
+    "tlsInstanceCa": "仅实例 CA",
+    "tlsGlobalBundle": "全局 CA 包",
+    "tlsDefault": "系统信任库",
+    "tlsSkipVerify": "未验证"
+  },
+  "vaultCheck": {
+    "check": "检查",
+    "checking": "检查中…",
+    "ok": "此引用应能解析。",
+    "notOk": "此引用按现状无法解析。",
+    "error": "检查无法运行：{message}",
+    "nameParses": "引用有效",
+    "nameInstance": "OpenBao/Vault 实例",
+    "namePathAllowed": "路径被允许",
+    "nameReadable": "Terrapod 可以读取",
+    "nameFieldsPresent": "字段存在",
+    "statusPass": "通过",
+    "statusFail": "失败",
+    "statusSkipped": "已跳过",
+    "statusUnknown": "未知",
+    "keys": "此密钥中的键",
+    "noKeys": "无",
+    "noteDynamic": "检查从不读取动态引擎：每次读取都会签发一个凭据。",
+    "noteKeysNeedPlan": "键名只向同时能在此工作区运行计划的人显示。",
+    "noteLocal": "此工作区在本地运行，OpenBao/Vault 引用在那里永远不会被解析。",
+    "noteDisabled": "未启用 OpenBao/Vault 值来源。"
   }
 }

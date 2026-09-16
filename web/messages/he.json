@@ -34,7 +34,8 @@
     "closeMenu": "סגירת תפריט",
     "ha": "זמינות גבוהה",
     "deletedWorkspaces": "סביבות עבודה שנמחקו",
-    "version": "גרסה {version}"
+    "version": "גרסה {version}",
+    "vault": "מצב OpenBao/Vault"
   },
   "switcher": {
     "language": "שפה",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {רישום מודול אחד} two {רישום # מודולים} many {רישום # מודולים} other {רישום # מודולים}}",
         "registering": "רושם…",
         "failed": "הסריקה נכשלה",
-        "ruleLink": "צרו כלל לרישום אוטומטי של מודולים חדשים"
+        "ruleLink": "צרו כלל לרישום אוטומטי של מודולים חדשים",
+        "orgNote": "רק העמוד הראשון של המאגרים מוצג כאן. צרו כלל כדי לכסות כל מאגר, כולל כאלה שייווצרו בהמשך."
       },
       "versionCount": "{count, plural, one {# גרסה} two {# גרסאות} many {# גרסאות} other {# גרסאות}}",
       "loadFailed": "טעינת המודולים נכשלה",
@@ -755,7 +757,8 @@
       "deleteRole": "מחיקת התפקיד נכשלה",
       "setAssignment": "הגדרת ההקצאה נכשלה",
       "setAssignmentStatus": "הגדרת ההקצאה נכשלה ({status})",
-      "deleteAssignment": "מחיקת ההקצאה נכשלה"
+      "deleteAssignment": "מחיקת ההקצאה נכשלה",
+      "conflictingLabelKeys": "ל-{keys} ניתן יותר מערך אחד. כלל תווית מחזיק ערך אחד לכל מפתח, ולכן האחרון יחליף בשקט את הקודמים. ריבוי ערכים למפתח אחד נתמך ב-API אך עדיין לא ניתן להגדרה כאן."
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "השם תפוס",
     "reasonMissingProvider": "אין ספק",
     "confirmDelete": "למחוק את הכלל {name}? המודולים שהוא רשם יישארו רשומים.",
-    "loadFailed": "טעינת כללי גילוי המודולים נכשלה"
+    "loadFailed": "טעינת כללי גילוי המודולים נכשלה",
+    "repoUrlHint": "מאגר בודד, ארגון או קבוצה (כל מאגר בו), או תבנית על מאגרי ארגון או קבוצה אחת, כמו {example}. תווי glob מופיעים רק במקטע האחרון. Terrapod קובע איזה מהם בעת השמירה, ולעולם לא משנה זאת מיוזמתו.",
+    "ownerPlaceholderHint": "כלל שמכסה ארגון או קבוצה יכול להשתמש גם ב-<owner></owner>: הבעלים של המאגר או הקבוצה שלו.",
+    "targetKind": {
+      "repository": "מאגר",
+      "namespace": "ארגון או קבוצה",
+      "pattern": "תבנית"
+    },
+    "attention": {
+      "badge": "דורש תשומת לב",
+      "title": "{name} דורש תשומת לב",
+      "hint": "הכלל מנסה שוב בסקר הרישום הבא. אם היעד שלו נמחק, ערכו את הכלל כדי להצביע למקום אחר."
+    },
+    "repoStatus": {
+      "active": "פעיל",
+      "archived": "בארכיון",
+      "empty": "ריק",
+      "noBranch": "אין ענף",
+      "outOfScope": "מחוץ לתחום",
+      "covered": "מכוסה",
+      "error": "שגיאה"
+    },
+    "origin": {
+      "baseline": "בסיס",
+      "new": "חדש"
+    },
+    "paging": {
+      "page": "עמוד {page} מתוך {pages}",
+      "previous": "הקודם",
+      "next": "הבא"
+    },
+    "repositories": {
+      "open": "מאגרים",
+      "title": "מאגרים: {ruleName}",
+      "lastListed": "עודכן לאחרונה {time}",
+      "notListed": "עדיין לא נרשם. סקר הרישום הבא ירשום את המאגרים של כלל זה.",
+      "legend": "מאגרי הבסיס התקיימו לפני הכלל, ולכן שום דבר בהם לא נרשם עד שתבחרו אותו מתוך תצוגה מקדימה. מאגרים חדשים נוצרו אחרי הכלל, ולכן המודולים שלהם נרשמים אוטומטית.",
+      "filterLabel": "סטטוס",
+      "filterAll": "כל הסטטוסים",
+      "none": "אין עדיין מאגרים.",
+      "noneWithStatus": "אין מאגרים בסטטוס הזה.",
+      "loadFailed": "טעינת המאגרים של הכלל נכשלה",
+      "repository": "מאגר",
+      "status": "סטטוס",
+      "origin": "מקור",
+      "candidates": "מועמדים",
+      "lastChecked": "נבדק לאחרונה",
+      "error": "שגיאה",
+      "renamed": "שונה השם מ",
+      "renamedFrom": "שונה השם מ-{paths}",
+      "never": "מעולם לא",
+      "candidateCount": "{count, plural, one {מודול אחד} two {# מודולים} other {# מודולים}}"
+    },
+    "grouped": {
+      "storedNote": "מה שסקר הרישום האחרון מצא בכל מאגר. שום דבר לא נקרא מספק ה-VCS.",
+      "unsavedNote": "כלל שלא נשמר קורא עמוד אחד של מאגרים בכל פעם, בזמן אמת. שמרו אותו כדי שהסוקר יעקוב אחר כל מאגר.",
+      "incomplete": "לארגון או לקבוצה הזו יש יותר מאגרים ממה ש-Terrapod מציג בבת אחת, ולכן חלקם אינם מוצגים.",
+      "selectRepository": "בחרו כל מודול ב-{repository}",
+      "noCandidates": "אין מודולים לרישום כאן.",
+      "repositoryError": "לא ניתן היה לקרוא את המאגר הזה: {error}",
+      "confirmRegisterAll": "לרשום כל מודול שהכלל הזה מצא? מודולים שכבר רשומים, או ששמם תפוס, מדולגים.",
+      "scanRepositories": "{count, plural, one {נסרק מאגר אחד.} two {נסרקו # מאגרים.} other {נסרקו # מאגרים.}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "עדכון מרוכז",
@@ -3248,5 +3313,60 @@
         "applying": "מחיל"
       }
     }
+  },
+  "adminVault": {
+    "title": "מצב OpenBao/Vault",
+    "description": "תקינות, התחברות ואמון TLS עבור כל מופע OpenBao (או HashiCorp Vault) שממנו Terrapod קורא משתנים. נדגם פעם בדקה; פתיחת הדף הזה לעולם אינה פונה אל השרת.",
+    "disabled": "מקור הערכים OpenBao/Vault אינו מופעל בפריסה הזו.",
+    "notSampled": "עדיין לא נדגם. הדגימה הראשונה נלקחת תוך דקה מעליית ה-API.",
+    "cacheUnreachable": "לא ניתן היה לקרוא את מטמון המצב, ולכן התקינות של כל מופע אינה ידועה.",
+    "sampledAt": "נדגם {time}",
+    "refresh": "רענון",
+    "default": "ברירת מחדל",
+    "reachable": "נגיש",
+    "unreachable": "לא נגיש",
+    "sealed": "חתום",
+    "unsealed": "לא חתום",
+    "notInitialized": "לא אותחל",
+    "standby": "המתנה",
+    "loginOk": "ההתחברות תקינה",
+    "loginFailed": "ההתחברות נכשלה",
+    "unknown": "לא ידוע",
+    "address": "כתובת",
+    "namespace": "מרחב שמות",
+    "authMethod": "שיטת אימות",
+    "tlsTrust": "אמון TLS",
+    "version": "גרסה",
+    "tokenTtl": "TTL של האסימון",
+    "checkedAt": "נבדק",
+    "lastError": "שגיאת הפענוח האחרונה",
+    "noLastError": "לא נרשמה",
+    "lastErrorLine": "{kind} ב-{time}",
+    "tlsInstanceCa": "CA של המופע בלבד",
+    "tlsGlobalBundle": "חבילת CA גלובלית",
+    "tlsDefault": "מאגר האמון של המערכת",
+    "tlsSkipVerify": "לא מאומת"
+  },
+  "vaultCheck": {
+    "check": "בדיקה",
+    "checking": "בודק…",
+    "ok": "ההפניה הזו אמורה להתפענח.",
+    "notOk": "ההפניה הזו לא תתפענח כפי שהיא.",
+    "error": "לא ניתן היה להריץ את הבדיקה: {message}",
+    "nameParses": "ההפניה תקינה",
+    "nameInstance": "מופע OpenBao/Vault",
+    "namePathAllowed": "הנתיב מותר",
+    "nameReadable": "Terrapod רשאי לקרוא",
+    "nameFieldsPresent": "השדות קיימים",
+    "statusPass": "עבר",
+    "statusFail": "נכשל",
+    "statusSkipped": "דולג",
+    "statusUnknown": "לא ידוע",
+    "keys": "מפתחות בסוד הזה",
+    "noKeys": "אין",
+    "noteDynamic": "בדיקה לעולם אינה קוראת מנוע דינמי: כל קריאה הייתה מנפיקה אישור גישה.",
+    "noteKeysNeedPlan": "שמות המפתחות מוצגים רק למי שיכול גם להריץ תוכנית בסביבת העבודה הזו.",
+    "noteLocal": "סביבת העבודה הזו רצה מקומית, שם הפניה ל-OpenBao/Vault לעולם אינה מתפענחת.",
+    "noteDisabled": "מקור הערכים OpenBao/Vault אינו מופעל."
   }
 }

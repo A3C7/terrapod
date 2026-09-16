@@ -1844,6 +1844,88 @@ client can offer it only where it will work. Returns instance **names** only —
 never addresses, namespaces or auth configuration. Any authenticated user may
 call it, since anyone who can write a variable needs to pick an instance.
 
+<a id="vault-diagnostics"></a>
+
+#### OpenBao/Vault diagnostics
+
+```
+GET /api/terrapod/v1/admin/vault
+```
+
+The sampled status of each configured instance. It needs platform `admin` or
+`audit`. It is read from a sample the `vault_status` scheduler task takes every
+60 seconds, never by contacting the server on the request. A collection of
+`vault-instance-statuses`, one per configured instance, with `id` set to the
+instance name:
+
+```json
+{"data": [{"id": "default", "type": "vault-instance-statuses", "attributes": {
+   "name": "default", "default": true, "address": "https://openbao:8200", "namespace": "",
+   "auth-method": "kubernetes", "auth-mount": "kubernetes", "auth-role": "terrapod",
+   "tls-trust": "instance-ca", "reachable": true, "initialized": true, "sealed": false,
+   "standby": false, "version": "1.18.0", "health-error": null,
+   "login-ok": true, "login-error": null, "ttl-seconds": 1740,
+   "checked-at": "2026-09-15T10:00:00Z",
+   "last-error": {"class": "VaultDenied", "at": "2026-09-15T09:12:03Z",
+     "message": "variable 'NETBOX_TOKEN': OpenBao/Vault denied 'secret/apps/netbox' on instance 'default'. …"}}}],
+ "meta": {"pagination": {…},
+   "vault": {"enabled": true, "sampled-at": "2026-09-15T10:00:00Z", "unavailable-reason": null}}}
+```
+
+`tls-trust` is `instance-ca`, `global-bundle`, `default` or `skip-verify`.
+Every probe field is `null` when unknown (not sampled yet, or not attempted:
+a sealed server is never logged in to), which is not the same as `false`. With
+the value source off, `data` is empty and `meta.vault.enabled` is `false`.
+`unavailable-reason` is `not sampled yet` or `cache unreachable` when there is
+no usable sample.
+
+```
+POST /api/terrapod/v1/workspaces/{workspace_id}/vault-reference-checks
+POST /api/terrapod/v1/varsets/{varset_id}/vault-reference-checks
+```
+
+Checks a reference without resolving it. The workspace form needs `var:write`
+on the workspace; the variable-set form needs platform admin. Limited to 20
+checks a minute per user (`429` with `Retry-After`). The body carries
+`reference` (a reference object, or its JSON string) or `variable-id` (a
+stored vault-sourced variable), plus an optional `key`, which a file name
+defaults to:
+
+```json
+{"data": {"type": "vault-reference-checks",
+  "attributes": {"reference": {"mount": "secret", "path": "apps/netbox", "field": "apitoken"}}}}
+```
+
+A reference that does not parse is a `200` result with `parses: false`, not an
+error. `404` means an unknown workspace, variable set or variable; `422` means
+a body with neither `reference` nor `variable-id`, or a variable whose source
+is not `vault`. Nothing is stored, and the `id` only tells two answers apart:
+
+```json
+{"data": {"id": "vrc-…", "type": "vault-reference-checks", "attributes": {
+   "ok": false, "vault-enabled": true, "parses": true, "parse-error": null,
+   "instance": "default", "instance-known": true, "engine": "kv2",
+   "read-path": "secret/data/apps/netbox", "path-allowed": true,
+   "readable": true, "capabilities": ["read", "list"], "required-capabilities": ["read"],
+   "keys": ["apitoken", "url"], "fields-present": true, "missing-fields": [],
+   "notes": [],
+   "checks": [{"name": "parses", "status": "pass", "detail": ""},
+              {"name": "instance", "status": "pass", "detail": ""},
+              {"name": "path-allowed", "status": "pass", "detail": ""},
+              {"name": "readable", "status": "pass", "detail": ""},
+              {"name": "fields-present", "status": "pass", "detail": ""}]}}}
+```
+
+`checks` runs in order and stops at the first `fail`. A step's `status` is
+`pass`, `fail`, `skipped` or `unknown`, where `unknown` means the server could not
+answer. `readable` comes from `sys/capabilities-self`, which reads nothing at
+the path. `keys` holds key **names**, for kv-v2 only; it is `null` for a
+dynamic engine, which a check never reads because a read mints a credential,
+and `null` for a caller without `run:plan`. `notes` holds codes:
+`dynamic-not-read`, `keys-need-plan-permission`, `local-execution` and
+`vault-disabled`. See
+[OpenBao/Vault → Diagnostics](vault.md#diagnostics).
+
 Full setup, including the server-side policy and role: [OpenBao/Vault](vault.md).
 
 ### Assignment Rules
@@ -2500,7 +2582,7 @@ These use the **identical spec shape** as the bulk-update endpoint, so a run tas
 
 ## Module Autodiscovery Rules
 
-Rules that find the modules in one repository (the root and any submodules) and register them in the private registry. See [Module autodiscovery](registry.md#module-autodiscovery) for how a rule behaves over time.
+Rules that find the modules (the root and any submodules) in one repository, or in every repository of an org, group or repository-name pattern, and register them in the private registry. See [Module autodiscovery](registry.md#module-autodiscovery) for how a rule behaves over time.
 
 All endpoints require the platform `admin` role. Rule ids are `modrule-<uuid>`, and a raw UUID is accepted too. `vcs-connection-id` accepts `vcs-<uuid>` or a raw UUID.
 
@@ -2546,10 +2628,10 @@ POST /api/v1/module-autodiscovery-rules
 |---|---|
 | `name` | Unique per VCS connection. |
 | `vcs-connection-id` | The connection whose credentials read the repository. |
-| `repo-url` | The repository to scan. |
-| `branch` | Empty means the repository's default branch. |
+| `repo-url` | What to scan: one repository (`https://github.com/myorg/terraform-aws-vpc`), an org or group (`https://github.com/myorg`), or a pattern over one org or group's repositories (`https://github.com/myorg/terraform-*`, glob characters in the last segment only). Classified when saved and reported as `target-kind`; see [What a rule looks at](registry.md#module-autodiscovery). |
+| `branch` | Empty means each repository's default branch. |
 | `pattern`, `ignore-patterns` | Gitignore-style globs over `.tf` / `.tf.json` file paths. Each matching file's directory is a module. A pattern ending in `/` is refused, because it can only match a directory. |
-| `name-template` | Literal text plus the placeholders `{repo}`, `{path}`, `{leaf}` and `{root}`. Empty means the repository's module name plus the submodule's last segment. |
+| `name-template` | Literal text plus the placeholders `{repo}`, `{path}`, `{leaf}`, `{root}` and `{owner}` (the repository's owner or group). Empty means the repository's module name plus the submodule's last segment. |
 | `provider` | Lowercase letters, digits and hyphens. Empty means taken from a `terraform-<provider>-<name>` repository name. |
 | `vcs-tag-pattern` | Copied onto each registered module. Empty means `v*`. |
 | `enabled` | A boolean; default `true`. While enabled, directories that appear on the tracked branch are registered automatically. |
@@ -2562,6 +2644,7 @@ Returns `201` with the created rule. `409` means a rule with that name already e
 `422` covers:
 - a missing required attribute;
 - a connection id that isn't a UUID, or that doesn't exist;
+- a `repo-url` that names nothing on the connection: a repository or group that doesn't exist, a host other than the connection's, another GitHub account than the one the App is installed on, three or more path segments on GitHub, or glob characters outside the last segment;
 - a pattern or ignore pattern ending in `/`;
 - `ignore-patterns` that isn't a list of strings;
 - a `name-template` with any other placeholder, a format spec, or any other brace;
@@ -2570,14 +2653,19 @@ Returns `201` with the created rule. `409` means a rule with that name already e
 - an `owner-email` that isn't an email address;
 - a reserved label key.
 
+`502` means the VCS provider could not be asked while classifying `repo-url`; retry. A pattern that matches no repository yet is accepted.
+
 **Rule attributes** in responses:
 - `name`
 - `vcs-connection-id`, as `vcs-<uuid>`
-- `repo-url`, `branch`, `pattern`, `ignore-patterns`, `enabled`
+- `repo-url` (as entered), `branch`, `pattern`, `ignore-patterns`, `enabled`
+- `target-kind`: read-only; `repository`, `namespace` (an org or group) or `pattern`. Fixed when the rule is saved; it changes only when `repo-url` or `vcs-connection-id` does.
 - `name-template`, `provider`, `vcs-tag-pattern`, `labels`
 - `owner-email`: `""` when none
-- `first-scan-at`: `null` until the rule's first poll or scan
-- `last-scanned-sha`: the tracked branch's head at the last scan
+- `first-scan-at`: `null` until the rule's first poll or scan (for an org-wide rule, its baseline)
+- `last-scanned-sha`: the tracked branch's head at the last scan; `""` for an org-wide rule, whose heads are per repository
+- `last-enumerated-at`: when an org-wide rule last completed a listing of its repositories, or `null`
+- `last-error`: why the rule's last poll could not do all its work (its target was deleted, the listing failed or stopped at the repository cap, or the API quota ran low), or `""`
 - `created-at`, `updated-at`
 
 Each rule also has a `vcs-connection` relationship and a `links.self`.
@@ -2594,7 +2682,7 @@ GET /api/v1/module-autodiscovery-rules/{id}
 PATCH /api/v1/module-autodiscovery-rules/{id}
 ```
 
-Same body shape as create; only the attributes you include change, validated the same way. Changing `repo-url`, `vcs-connection-id`, `branch`, `pattern` or `ignore-patterns`, or setting `enabled` to `true` on a disabled rule, starts the rule afresh: what it had seen no longer describes what it claims, so the next poll records a new baseline rather than registering every directory the old rule never claimed. Register those with a [scan](#scan-register-modules).
+Same body shape as create; only the attributes you include change, validated the same way. A changed `repo-url` or `vcs-connection-id` is classified again, as on create; so is re-saving the same `repo-url` of a rule with a `last-error`. Changing `repo-url`, `vcs-connection-id`, `branch`, `pattern` or `ignore-patterns`, or setting `enabled` to `true` on a disabled rule, starts the rule afresh: what it had seen no longer describes what it claims, so its per-repository state is cleared and the next poll records a new baseline rather than registering every directory the old rule never claimed. Register those with a [scan](#scan-register-modules).
 
 ### Delete Rule
 
@@ -2611,12 +2699,18 @@ GET  /api/v1/module-autodiscovery-rules/{id}/preview   # a saved rule
 POST /api/v1/module-autodiscovery-rules/preview        # an unsaved rule (same body as Create)
 ```
 
-Registers nothing. Returns a `module-autodiscovery-rule-previews` document with:
-- `ref`: the branch it read;
+Registers nothing. A single-repository rule reads its repository live. An org-wide saved rule is served from what the last poll found, with no VCS calls, a page of repositories at a time (`page[size]`, `page[number]`, with `meta.pagination`); `?repository=<path-or-url>` reads that one repository live instead (`404` when it isn't one of the rule's repositories; `422` on a single-repository rule when it names another repository). An unsaved org-wide rule reads one page of repositories live (`page[size]` at most 25, default 10); a repository that cannot be read is reported in `repositories`, not as a failed preview.
+
+Returns a `module-autodiscovery-rule-previews` document with:
+- `ref`: the branch it read; `""` for a stored org-wide preview;
 - `files-walked`;
-- `entries[]`: one per candidate directory, root first.
+- `target-kind`: as on the rule;
+- `entries[]`: one per candidate directory, root first, grouped by repository;
+- `repositories[]`: one per repository on this page, including ones with no candidates, each with `repository` (the path), `repo-url`, `ref`, `status` (`active`, `archived`, `empty`, `no-branch`, `out-of-scope`, `covered` or `error`), `origin` (`baseline` or `new`) and `error`;
+- `listing-complete`: `false` when an org-wide listing stopped at the repository cap, so some repositories are not shown.
 
 Each entry has:
+- `repository` and `repo-url`: the repository the directory is in;
 - `subdirectory`: `""` for the root;
 - `name` and `provider`: as a scan would register them;
 - `registered-as`: the `{name, provider}` of the module already registered from that directory, or `null`;
@@ -2634,21 +2728,53 @@ Errors:
 POST /api/v1/module-autodiscovery-rules/{id}/scan
 ```
 
-With no body, registers every candidate. To register a chosen subset, send:
+With no body, registers every candidate. To register a chosen subset of a single-repository rule, send:
 
 ```json
 {"data": {"attributes": {"subdirectories": ["", "modules/create"]}}}
 ```
 
+An org-wide rule registers from what the last poll found, with no VCS calls, and takes `selections` instead: the repositories to register from (a path or URL), each with optional `subdirectories` (omitted means all of that repository's candidates). At most 200 repositories per request. A single-repository rule accepts `selections` naming its one repository too.
+
+```json
+{"data": {"attributes": {"selections": [
+  {"repository": "myorg/terraform-aws-vpc"},
+  {"repository": "myorg/terraform-aws-dns", "subdirectories": ["modules/zone"]}
+]}}}
+```
+
+With no body, an org-wide rule registers every current candidate of every repository, which in a large org can be many modules.
+
 Registered modules are VCS-sourced, carry their `subdirectory`, and take the rule's branch, tag pattern, labels and owner. Their tags are polled on the next registry poll. A scan works whether or not the rule is enabled. Everything it saw counts as seen, so automatic registration will never later pick up a candidate you left out.
 
 Returns a `module-autodiscovery-rule-scans` document with:
-- `ref` and `files-walked`;
+- `ref` and `files-walked` (`""` and `0` for an org-wide rule);
 - `modules-registered`: the count;
-- `modules[]`: each with `id`, `name`, `provider` and `subdirectory`;
-- `skipped[]`: each with `subdirectory` and a `reason`: `already-registered`, `name-taken` or `missing-provider`.
+- `modules[]`: each with `id`, `name`, `provider`, `subdirectory`, `repository` and `repo-url`;
+- `skipped[]`: each with `subdirectory` and a `reason` (`already-registered`, `name-taken` or `missing-provider`), plus `repository` and `repo-url` for an org-wide rule;
+- `repositories-scanned`: how many repositories it registered from.
 
-Returns `422` when a listed subdirectory isn't one of the rule's candidates, or `subdirectories` isn't a list of strings. The repository errors are the same as for Preview.
+Returns `422` when a listed subdirectory isn't one of the rule's candidates, `subdirectories` or `selections` is malformed, a selection names a repository that isn't the rule's or has no candidates to register, or `subdirectories` is sent to an org-wide rule. Everything is checked before anything is registered. The repository errors are the same as for Preview.
+
+### Rule Repositories
+
+```
+GET /api/terrapod/v1/module-autodiscovery-rules/{id}/repositories
+```
+
+The repositories the rule looks at, by path, each with the state its polls keep: one for a single-repository rule once it has been polled, one per listed repository for an org-wide rule. Read-only, and separate from the rule so the rule stays small. `filter[status]=<status>` narrows by status. Paginated in the database (`page[size]` up to 100, `page[number]`, `meta.pagination`); with no `page[size]` the whole list is returned.
+
+Each `module-autodiscovery-rule-repositories` item (`id` `modrepo-<uuid>`, with a `rule` relationship) has:
+- `repository`: the path (`owner/repo`, or `group/subgroup/project`), and `repo-url`;
+- `vcs-repo-id` and `default-branch`;
+- `origin`: `baseline` (it existed at the rule's baseline, so nothing registers until it is scanned) or `new` (created afterwards, so its modules register automatically);
+- `status`: `active`, `archived` (kept, not scanned), `empty`, `no-branch`, `out-of-scope` (left the rule's target; its modules stay), `covered` (a single-repository rule on the connection names it) or `error`;
+- `last-scanned-sha`, `seen-subdirectories`;
+- `candidates[]`: `{subdirectory, name, provider}` as the last poll found them;
+- `last-skips[]`: `{subdirectory, reason}` from the last registration;
+- `previous-paths[]`: `{path, url}` before a rename or transfer, oldest first;
+- `repo-created-at`, `first-seen-at`, `last-checked-at`, `next-check-at`: RFC3339 or `null`;
+- `failure-count` and `last-error`: consecutive failed reads (they back off) and the last reason.
 
 ---
 

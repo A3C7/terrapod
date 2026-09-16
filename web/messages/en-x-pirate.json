@@ -34,7 +34,8 @@
     "closeMenu": "Batten th'' menu",
     "ha": "Ever-Afloat",
     "deletedWorkspaces": "Scuttled work-decks",
-    "version": "Ship's mark {version}"
+    "version": "Ship's mark {version}",
+    "vault": "State o’ the OpenBao/Vault strongroom"
   },
   "switcher": {
     "language": "Tongue",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {Stow # module in the hold} other {Stow # modules in the hold}}",
         "registering": "Registerin''…",
         "failed": "The search ran aground",
-        "ruleLink": "Make a rule to stow new modules automatically"
+        "ruleLink": "Make a rule to stow new modules automatically",
+        "orgNote": "Only the first page o'' repositories be shown here. Make a rule to sail over every repository, includin'' ones built later."
       },
       "versionCount": "{count, plural, one {# version} other {# versions}}",
       "loadFailed": "Failed t'' load modules",
@@ -755,7 +757,8 @@
       "deleteRole": "Failed t'' send role t'' Davy Jones",
       "setAssignment": "Failed t'' set assignment",
       "setAssignmentStatus": "Failed t'' set assignment ({status})",
-      "deleteAssignment": "Failed t'' send assignment t'' Davy Jones"
+      "deleteAssignment": "Failed t'' send assignment t'' Davy Jones",
+      "conflictingLabelKeys": "{keys} be given more than one value. A marking rule holds one value per key, so the last would quietly replace them afore it. Matching several values for one key be supported by the API but cannot yet be set here."
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "name be taken",
     "reasonMissingProvider": "no provider, arr",
     "confirmDelete": "Scuttle the rule {name}? The modules it stowed stay stowed.",
-    "loadFailed": "Couldn''t haul in the module-huntin'' rules"
+    "loadFailed": "Couldn''t haul in the module-huntin'' rules",
+    "repoUrlHint": "One repository, an org or fleet (every repository aboard it), or a pattern over one org or fleet''s repositories, such as {example}. Glob characters go in the last segment only. Terrapod reckons which when ye save, an'' never changes course on its own, arr.",
+    "ownerPlaceholderHint": "A rule that sails over an org or fleet can also use <owner></owner>: the repository''s owner or fleet.",
+    "targetKind": {
+      "repository": "Cargo hold",
+      "namespace": "Org or fleet",
+      "pattern": "Charted pattern"
+    },
+    "attention": {
+      "badge": "All hands on deck",
+      "title": "{name} needs all hands on deck",
+      "hint": "A rule tries again on the next registry watch. If its target were scuttled, edit the rule to set it a new heading."
+    },
+    "repoStatus": {
+      "active": "shipshape",
+      "archived": "archived in th'' hold",
+      "empty": "empty as a rum barrel",
+      "noBranch": "no branch aboard",
+      "outOfScope": "beyond the horizon",
+      "covered": "under our colours",
+      "error": "squall"
+    },
+    "origin": {
+      "baseline": "old salt",
+      "new": "fresh aboard"
+    },
+    "paging": {
+      "page": "Page {page} o'' {pages}",
+      "previous": "Back astern",
+      "next": "Onward"
+    },
+    "repositories": {
+      "open": "Cargo holds",
+      "title": "Cargo holds: {ruleName}",
+      "lastListed": "Last mustered {time}",
+      "notListed": "Not mustered yet. The next registry watch will muster this rule''s repositories.",
+      "legend": "Old-salt repositories were afloat afore the rule, so nothin'' in ''em be stowed ''til ye pick it from a preview. Fresh repositories were built after the rule, so their modules be stowed automatically.",
+      "filterLabel": "Ship''s status",
+      "filterAll": "Every status on the seas",
+      "none": "No repositories aboard yet.",
+      "noneWithStatus": "No repositories wi'' this status, matey.",
+      "loadFailed": "Couldn''t haul in the rule''s repositories",
+      "repository": "Cargo hold",
+      "status": "Ship''s status",
+      "origin": "Home port",
+      "candidates": "Plunder to stow",
+      "lastChecked": "Last sighted",
+      "error": "Squall",
+      "renamed": "Sailed afore as",
+      "renamedFrom": "Sailed afore as {paths}",
+      "never": "nary",
+      "candidateCount": "{count, plural, one {# module, arr} other {# modules, arr}}"
+    },
+    "grouped": {
+      "storedNote": "What the last registry watch spied in each repository. Nothin'' be read from the VCS provider.",
+      "unsavedNote": "An unsaved rule reads one page o'' repositories at a time, live. Save it so the lookout keeps an eye on every repository.",
+      "incomplete": "This org or fleet has more repositories than Terrapod can muster at once, so some be hidden below decks.",
+      "selectRepository": "Pick every module in {repository}",
+      "noCandidates": "No modules to stow here, matey.",
+      "repositoryError": "Couldn''t read this repository: {error}",
+      "confirmRegisterAll": "Stow every module this rule has found? Modules already stowed, or whose name be claimed, get passed over.",
+      "scanRepositories": "{count, plural, one {Searched # repository, arr.} other {Searched # repositories, arr.}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "Bulk Update",
@@ -3248,5 +3313,60 @@
         "applying": "Upin''"
       }
     }
+  },
+  "adminVault": {
+    "title": "State o’ the OpenBao/Vault strongroom",
+    "description": "Health, boardin’ and TLS trust fer each OpenBao (or HashiCorp Vault, if ye must) strongroom Terrapod plunders variables from. Sounded once a minute; openin’ this chart never hails the strongroom.",
+    "disabled": "The OpenBao/Vault treasure source be not hoisted on this vessel.",
+    "notSampled": "Not sounded yet. The first soundin’ be taken within a minute o’ the API weighin’ anchor.",
+    "cacheUnreachable": "The ship’s log o’ status could not be read, so the health o’ each strongroom be unknown.",
+    "sampledAt": "Sounded {time}",
+    "refresh": "Sound again",
+    "default": "Flagship",
+    "reachable": "Within hail",
+    "unreachable": "Beyond hail",
+    "sealed": "Battened down",
+    "unsealed": "Hatches open",
+    "notInitialized": "Never launched",
+    "standby": "Standin’ by",
+    "loginOk": "Boarded fair",
+    "loginFailed": "Boardin’ repelled",
+    "unknown": "Uncharted",
+    "address": "Harbour",
+    "namespace": "Waters",
+    "authMethod": "Boardin’ method",
+    "tlsTrust": "Trust o’ the TLS seas",
+    "version": "Refit",
+    "tokenTtl": "Token’s time afloat",
+    "checkedAt": "Sounded",
+    "lastError": "Last wreck on the rocks",
+    "noLastError": "Clear sailin’",
+    "lastErrorLine": "{kind} struck at {time}",
+    "tlsInstanceCa": "The strongroom’s own CA only",
+    "tlsGlobalBundle": "The fleet’s CA bundle",
+    "tlsDefault": "The ship’s own trust chest",
+    "tlsSkipVerify": "Trusted blind"
+  },
+  "vaultCheck": {
+    "check": "Sound it",
+    "checking": "Soundin’…",
+    "ok": "This bearin’ should find its treasure.",
+    "notOk": "This bearin’ will not find its treasure as it be.",
+    "error": "The soundin’ could not be made: {message}",
+    "nameParses": "Bearin’ be sound",
+    "nameInstance": "OpenBao/Vault strongroom",
+    "namePathAllowed": "Course permitted",
+    "nameReadable": "Terrapod may plunder it",
+    "nameFieldsPresent": "Fields aboard",
+    "statusPass": "Aye",
+    "statusFail": "Nay",
+    "statusSkipped": "Passed by",
+    "statusUnknown": "Uncharted",
+    "keys": "Keys in this chest",
+    "noKeys": "None aboard",
+    "noteDynamic": "A soundin’ never opens a dynamic engine: every openin’ would mint fresh papers.",
+    "noteKeysNeedPlan": "Key names be shown only to them as can also sail a voyage on this work-deck.",
+    "noteLocal": "This work-deck sails on yer own ship, where an OpenBao/Vault bearin’ never finds its treasure.",
+    "noteDisabled": "The OpenBao/Vault treasure source be not hoisted."
   }
 }

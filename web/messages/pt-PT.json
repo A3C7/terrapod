@@ -34,7 +34,8 @@
     "closeMenu": "Fechar menu",
     "ha": "Alta disponibilidade",
     "deletedWorkspaces": "Workspaces eliminados",
-    "version": "Versão {version}"
+    "version": "Versão {version}",
+    "vault": "Estado do OpenBao/Vault"
   },
   "switcher": {
     "language": "Idioma",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {Registar # módulo} other {Registar # módulos}}",
         "registering": "A registar…",
         "failed": "Falha na análise",
-        "ruleLink": "Crie uma regra para registar novos módulos automaticamente"
+        "ruleLink": "Crie uma regra para registar novos módulos automaticamente",
+        "orgNote": "Aqui é apresentada apenas a primeira página de repositórios. Crie uma regra para abranger todos os repositórios, incluindo os criados posteriormente."
       },
       "versionCount": "{count, plural, one {# versão} other {# versões}}",
       "loadFailed": "Falha ao carregar os módulos",
@@ -755,7 +757,8 @@
       "deleteRole": "Falha ao eliminar a função",
       "setAssignment": "Falha ao definir a atribuição",
       "setAssignmentStatus": "Falha ao definir a atribuição ({status})",
-      "deleteAssignment": "Falha ao eliminar a atribuição"
+      "deleteAssignment": "Falha ao eliminar a atribuição",
+      "conflictingLabelKeys": "{keys} recebeu mais do que um valor. Uma regra de etiqueta guarda um valor por chave, pelo que o último substituiria os anteriores sem aviso. Vários valores por chave são aceites pela API, mas ainda não podem ser definidos aqui."
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "nome já utilizado",
     "reasonMissingProvider": "sem fornecedor",
     "confirmDelete": "Eliminar a regra {name}? Os módulos que registou continuam registados.",
-    "loadFailed": "Falha ao carregar as regras de descoberta de módulos"
+    "loadFailed": "Falha ao carregar as regras de descoberta de módulos",
+    "repoUrlHint": "Um repositório, uma organização ou grupo (todos os repositórios nele), ou um padrão sobre os repositórios de uma organização ou grupo, como {example}. Os carateres de glob só podem aparecer no último segmento. O Terrapod determina qual é ao guardar, e nunca o altera por conta própria depois.",
+    "ownerPlaceholderHint": "Uma regra que abrange uma organização ou grupo também pode usar <owner></owner>: o proprietário ou grupo do repositório.",
+    "targetKind": {
+      "repository": "Repositório",
+      "namespace": "Organização ou grupo",
+      "pattern": "Padrão"
+    },
+    "attention": {
+      "badge": "Requer atenção",
+      "title": "{name} requer atenção",
+      "hint": "Uma regra tenta novamente na próxima sondagem do registo. Se o destino foi eliminado, edite a regra para apontá-la para outro local."
+    },
+    "repoStatus": {
+      "active": "ativo",
+      "archived": "arquivado",
+      "empty": "vazio",
+      "noBranch": "sem branch",
+      "outOfScope": "fora do âmbito",
+      "covered": "coberto",
+      "error": "erro"
+    },
+    "origin": {
+      "baseline": "linha de base",
+      "new": "novo"
+    },
+    "paging": {
+      "page": "Página {page} de {pages}",
+      "previous": "Anterior",
+      "next": "Seguinte"
+    },
+    "repositories": {
+      "open": "Repositórios",
+      "title": "Repositórios: {ruleName}",
+      "lastListed": "Listados pela última vez {time}",
+      "notListed": "Ainda não listados. A próxima sondagem do registo listará os repositórios desta regra.",
+      "legend": "Os repositórios de linha de base já existiam antes da regra, pelo que nada neles é registado até o escolher numa pré-visualização. Os repositórios novos foram criados depois da regra, pelo que os seus módulos são registados automaticamente.",
+      "filterLabel": "Estado",
+      "filterAll": "Todos os estados",
+      "none": "Ainda não há repositórios.",
+      "noneWithStatus": "Nenhum repositório com este estado.",
+      "loadFailed": "Falha ao carregar os repositórios da regra",
+      "repository": "Repositório",
+      "status": "Estado",
+      "origin": "Origem",
+      "candidates": "Candidatos",
+      "lastChecked": "Última verificação",
+      "error": "Erro",
+      "renamed": "Renomeado de",
+      "renamedFrom": "Renomeado de {paths}",
+      "never": "nunca",
+      "candidateCount": "{count, plural, one {# módulo} other {# módulos}}"
+    },
+    "grouped": {
+      "storedNote": "O que a última sondagem do registo encontrou em cada repositório. Nada é lido do fornecedor de VCS.",
+      "unsavedNote": "Uma regra não guardada lê uma página de repositórios de cada vez, ao vivo. Guarde-a para que a sondagem acompanhe todos os repositórios.",
+      "incomplete": "Esta organização ou grupo tem mais repositórios do que o Terrapod lista de uma vez, pelo que alguns não são mostrados.",
+      "selectRepository": "Selecionar todos os módulos em {repository}",
+      "noCandidates": "Nenhum módulo para registar aqui.",
+      "repositoryError": "Não foi possível ler este repositório: {error}",
+      "confirmRegisterAll": "Registar todos os módulos que esta regra encontrou? Módulos já registados, ou cujo nome já está em uso, são ignorados.",
+      "scanRepositories": "{count, plural, one {# repositório analisado.} other {# repositórios analisados.}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "Atualização em Massa",
@@ -3248,5 +3313,60 @@
         "applying": "A aplicar"
       }
     }
+  },
+  "adminVault": {
+    "title": "Estado do OpenBao/Vault",
+    "description": "Saúde, início de sessão e confiança TLS de cada instância do OpenBao (ou do HashiCorp Vault) da qual o Terrapod lê variáveis. Amostrado uma vez por minuto; abrir esta página nunca contacta o servidor.",
+    "disabled": "A origem de valores do OpenBao/Vault não está ativada nesta instalação.",
+    "notSampled": "Ainda não amostrado. A primeira amostra é recolhida no primeiro minuto após o arranque da API.",
+    "cacheUnreachable": "Não foi possível ler a cache de estado, pelo que a saúde de cada instância é desconhecida.",
+    "sampledAt": "Amostrado {time}",
+    "refresh": "Atualizar",
+    "default": "Predefinida",
+    "reachable": "Acessível",
+    "unreachable": "Inacessível",
+    "sealed": "Selado",
+    "unsealed": "Deselado",
+    "notInitialized": "Não inicializado",
+    "standby": "Em espera",
+    "loginOk": "Sessão OK",
+    "loginFailed": "Falha no início de sessão",
+    "unknown": "Desconhecido",
+    "address": "Endereço",
+    "namespace": "Namespace",
+    "authMethod": "Método de autenticação",
+    "tlsTrust": "Confiança TLS",
+    "version": "Versão",
+    "tokenTtl": "TTL do token",
+    "checkedAt": "Verificado",
+    "lastError": "Último erro de resolução",
+    "noLastError": "Nenhum registado",
+    "lastErrorLine": "{kind} às {time}",
+    "tlsInstanceCa": "Apenas a CA da instância",
+    "tlsGlobalBundle": "Pacote de CA global",
+    "tlsDefault": "Arquivo de confiança do sistema",
+    "tlsSkipVerify": "Não verificado"
+  },
+  "vaultCheck": {
+    "check": "Verificar",
+    "checking": "A verificar…",
+    "ok": "Esta referência deverá ser resolvida.",
+    "notOk": "Esta referência não será resolvida tal como está.",
+    "error": "Não foi possível executar a verificação: {message}",
+    "nameParses": "A referência é válida",
+    "nameInstance": "Instância do OpenBao/Vault",
+    "namePathAllowed": "Caminho permitido",
+    "nameReadable": "O Terrapod pode lê-la",
+    "nameFieldsPresent": "Campos presentes",
+    "statusPass": "Aprovado",
+    "statusFail": "Falhou",
+    "statusSkipped": "Ignorado",
+    "statusUnknown": "Desconhecido",
+    "keys": "Chaves neste segredo",
+    "noKeys": "Nenhuma",
+    "noteDynamic": "Uma verificação nunca lê um motor dinâmico: cada leitura geraria uma credencial.",
+    "noteKeysNeedPlan": "Os nomes das chaves só são mostrados a quem também pode executar um plano neste workspace.",
+    "noteLocal": "Este workspace é executado localmente, onde uma referência do OpenBao/Vault nunca é resolvida.",
+    "noteDisabled": "A origem de valores do OpenBao/Vault não está ativada."
   }
 }

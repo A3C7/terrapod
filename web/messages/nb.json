@@ -34,7 +34,8 @@
     "closeMenu": "Lukk meny",
     "ha": "Høy tilgjengelighet",
     "deletedWorkspaces": "Slettede arbeidsområder",
-    "version": "Versjon {version}"
+    "version": "Versjon {version}",
+    "vault": "OpenBao/Vault-status"
   },
   "switcher": {
     "language": "Språk",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {Registrer # modul} other {Registrer # moduler}}",
         "registering": "Registrerer…",
         "failed": "Søket mislyktes",
-        "ruleLink": "Opprett en regel for å registrere nye moduler automatisk"
+        "ruleLink": "Opprett en regel for å registrere nye moduler automatisk",
+        "orgNote": "Bare den første siden med repositorier vises her. Opprett en regel for å dekke alle repositorier, inkludert de som opprettes senere."
       },
       "versionCount": "{count, plural, one {# versjon} other {# versjoner}}",
       "loadFailed": "Kunne ikke laste moduler",
@@ -755,7 +757,8 @@
       "deleteRole": "Kunne ikke slette rolle",
       "setAssignment": "Kunne ikke angi tildeling",
       "setAssignmentStatus": "Kunne ikke angi tildeling ({status})",
-      "deleteAssignment": "Kunne ikke slette tildeling"
+      "deleteAssignment": "Kunne ikke slette tildeling",
+      "conflictingLabelKeys": "{keys} har fått mer enn én verdi. En merkeregel rommer én verdi per nøkkel, så den siste ville stille erstatte de tidligere. Flere verdier per nøkkel støttes av API-et, men kan ennå ikke settes her."
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "navnet er i bruk",
     "reasonMissingProvider": "ingen provider",
     "confirmDelete": "Slette regelen {name}? Modulene den registrerte, forblir registrert.",
-    "loadFailed": "Kunne ikke laste inn reglene for modulgjenkjenning"
+    "loadFailed": "Kunne ikke laste inn reglene for modulgjenkjenning",
+    "repoUrlHint": "Ett repositorium, en org eller gruppe (alle repositoriene i den), eller et mønster over en org eller gruppes repositorier, for eksempel {example}. Glob-tegn forekommer bare i det siste segmentet. Terrapod avgjør hvilket når du lagrer, og endrer det aldri på egen hånd.",
+    "ownerPlaceholderHint": "En regel som dekker en org eller gruppe, kan også bruke <owner></owner>: repositoriets eier eller gruppe.",
+    "targetKind": {
+      "repository": "Repositorium",
+      "namespace": "Org eller gruppe",
+      "pattern": "Mønster"
+    },
+    "attention": {
+      "badge": "Krever oppmerksomhet",
+      "title": "{name} krever oppmerksomhet",
+      "hint": "En regel prøver igjen ved neste registeravspørring. Hvis målet er slettet, rediger regelen slik at den peker et annet sted."
+    },
+    "repoStatus": {
+      "active": "aktiv",
+      "archived": "arkivert",
+      "empty": "tom",
+      "noBranch": "ingen gren",
+      "outOfScope": "utenfor omfanget",
+      "covered": "dekket",
+      "error": "feil"
+    },
+    "origin": {
+      "baseline": "baseline",
+      "new": "ny"
+    },
+    "paging": {
+      "page": "Side {page} av {pages}",
+      "previous": "Forrige",
+      "next": "Neste"
+    },
+    "repositories": {
+      "open": "Repositorier",
+      "title": "Repositorier: {ruleName}",
+      "lastListed": "Sist listet {time}",
+      "notListed": "Ikke listet ennå. Neste registeravspørring lister denne regelens repositorier.",
+      "legend": "Baseline-repositorier fantes før regelen, så ingenting i dem registreres før du velger det fra en forhåndsvisning. Nye repositorier ble opprettet etter regelen, så modulene deres registreres automatisk.",
+      "filterLabel": "Status",
+      "filterAll": "Alle statuser",
+      "none": "Ingen repositorier ennå.",
+      "noneWithStatus": "Ingen repositorier med denne statusen.",
+      "loadFailed": "Kunne ikke laste inn regelens repositorier",
+      "repository": "Repositorium",
+      "status": "Status",
+      "origin": "Opprinnelse",
+      "candidates": "Kandidater",
+      "lastChecked": "Sist sjekket",
+      "error": "Feil",
+      "renamed": "Endret navn fra",
+      "renamedFrom": "Endret navn fra {paths}",
+      "never": "aldri",
+      "candidateCount": "{count, plural, one {# modul} other {# moduler}}"
+    },
+    "grouped": {
+      "storedNote": "Det den siste registeravspørringen fant i hvert repositorium. Ingenting leses fra VCS-leverandøren.",
+      "unsavedNote": "En ulagret regel leser én side med repositorier om gangen, direkte. Lagre den for at avspørringen skal følge alle repositorier.",
+      "incomplete": "Denne org eller gruppen har flere repositorier enn Terrapod lister om gangen, så noen vises ikke.",
+      "selectRepository": "Velg alle moduler i {repository}",
+      "noCandidates": "Ingen moduler å registrere her.",
+      "repositoryError": "Kunne ikke lese dette repositoriet: {error}",
+      "confirmRegisterAll": "Registrere alle moduler denne regelen har funnet? Moduler som allerede er registrert, eller hvis navn er i bruk, hoppes over.",
+      "scanRepositories": "{count, plural, one {Gikk gjennom # repositorium.} other {Gikk gjennom # repositorier.}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "Masseoppdatering",
@@ -3248,5 +3313,60 @@
         "applying": "Anvender"
       }
     }
+  },
+  "adminVault": {
+    "title": "OpenBao/Vault-status",
+    "description": "Helse, innlogging og TLS-tillit for hver OpenBao-instans (eller HashiCorp Vault-instans) Terrapod leser variabler fra. Måles én gang i minuttet; å åpne siden kontakter aldri serveren.",
+    "disabled": "OpenBao/Vault som verdikilde er ikke aktivert i denne installasjonen.",
+    "notSampled": "Ikke målt ennå. Den første målingen tas innen ett minutt etter at API-et har startet.",
+    "cacheUnreachable": "Statusbufferen kunne ikke leses, så helsen til hver instans er ukjent.",
+    "sampledAt": "Målt {time}",
+    "refresh": "Oppdater",
+    "default": "Standard",
+    "reachable": "Tilgjengelig",
+    "unreachable": "Utilgjengelig",
+    "sealed": "Forseglet",
+    "unsealed": "Uforseglet",
+    "notInitialized": "Ikke initialisert",
+    "standby": "Beredskap",
+    "loginOk": "Innlogging OK",
+    "loginFailed": "Innlogging mislyktes",
+    "unknown": "Ukjent",
+    "address": "Adresse",
+    "namespace": "Navnerom",
+    "authMethod": "Autentiseringsmetode",
+    "tlsTrust": "TLS-tillit",
+    "version": "Versjon",
+    "tokenTtl": "Token-TTL",
+    "checkedAt": "Kontrollert",
+    "lastError": "Siste oppløsningsfeil",
+    "noLastError": "Ingen registrert",
+    "lastErrorLine": "{kind} kl. {time}",
+    "tlsInstanceCa": "Bare instansens CA",
+    "tlsGlobalBundle": "Globalt CA-knippe",
+    "tlsDefault": "Systemets tillitslager",
+    "tlsSkipVerify": "Ikke verifisert"
+  },
+  "vaultCheck": {
+    "check": "Kontroller",
+    "checking": "Kontrollerer…",
+    "ok": "Denne referansen bør kunne løses opp.",
+    "notOk": "Denne referansen kan ikke løses opp slik den er.",
+    "error": "Kontrollen kunne ikke kjøres: {message}",
+    "nameParses": "Referansen er gyldig",
+    "nameInstance": "OpenBao/Vault-instans",
+    "namePathAllowed": "Sti tillatt",
+    "nameReadable": "Terrapod kan lese den",
+    "nameFieldsPresent": "Feltene finnes",
+    "statusPass": "Bestått",
+    "statusFail": "Mislyktes",
+    "statusSkipped": "Hoppet over",
+    "statusUnknown": "Ukjent",
+    "keys": "Nøkler i denne hemmeligheten",
+    "noKeys": "Ingen",
+    "noteDynamic": "En kontroll leser aldri en dynamisk motor: hver lesing ville utstedt en påloggingsinformasjon.",
+    "noteKeysNeedPlan": "Nøkkelnavn vises bare for den som også kan kjøre en plan i dette arbeidsområdet.",
+    "noteLocal": "Dette arbeidsområdet kjører lokalt, der en OpenBao/Vault-referanse aldri løses opp.",
+    "noteDisabled": "OpenBao/Vault som verdikilde er ikke aktivert."
   }
 }

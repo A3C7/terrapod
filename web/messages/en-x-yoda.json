@@ -34,7 +34,8 @@
     "closeMenu": "The menu, close",
     "ha": "Availability, high",
     "deletedWorkspaces": "Workspaces deleted",
-    "version": "Version {version}, this is"
+    "version": "Version {version}, this is",
+    "vault": "Status of OpenBao/Vault"
   },
   "switcher": {
     "language": "Language",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {Register # module, you will} other {Register # modules, you will}}",
         "registering": "Registering, I am…",
         "failed": "Failed, the scan has",
-        "ruleLink": "A rule to register new modules automatically, create you should"
+        "ruleLink": "A rule to register new modules automatically, create you should",
+        "orgNote": "Only the first page of repositories, shown here is. A rule to cover every repository, including ones created later, create you should."
       },
       "versionCount": "{count, plural, one {# version} other {# versions}}",
       "loadFailed": "Load the modules, it did not",
@@ -755,7 +757,8 @@
       "deleteRole": "Delete the role, it did not",
       "setAssignment": "Set the assignment, it did not",
       "setAssignmentStatus": "Set the assignment, it did not ({status})",
-      "deleteAssignment": "Delete the assignment, it did not"
+      "deleteAssignment": "Delete the assignment, it did not",
+      "conflictingLabelKeys": "More than one value, {keys} is given. One value per key a label rule holds, so silently replace the earlier ones the last would. Supported by the API, several values for one key are, but set here yet they cannot be."
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "taken already, the name is",
     "reasonMissingProvider": "no provider, there is",
     "confirmDelete": "Delete the rule {name}, you will? Registered, its modules stay.",
-    "loadFailed": "Load the module autodiscovery rules, I could not"
+    "loadFailed": "Load the module autodiscovery rules, I could not",
+    "repoUrlHint": "One repository, an org or group (every repository in it), or a pattern over one org or group''s repositories, such as {example} — enter it, you may. In the last segment only, glob characters go. Which it is, when you save, Terrapod works out, and on its own never changes it, hmm.",
+    "ownerPlaceholderHint": "Also use <owner></owner>, a rule that covers an org or group can: the repository''s owner or group, it is.",
+    "targetKind": {
+      "repository": "Repository",
+      "namespace": "Org or group, this is",
+      "pattern": "Pattern"
+    },
+    "attention": {
+      "badge": "Attention, it needs",
+      "title": "Attention, {name} needs",
+      "hint": "On the next registry poll, again a rule tries. If deleted its target was, edit the rule you must, and somewhere else point it."
+    },
+    "repoStatus": {
+      "active": "active, it is",
+      "archived": "archived, it is",
+      "empty": "empty, it is",
+      "noBranch": "no branch, there is",
+      "outOfScope": "out of scope, it is",
+      "covered": "covered, it is",
+      "error": "error, there is"
+    },
+    "origin": {
+      "baseline": "baseline, it is",
+      "new": "new, it is"
+    },
+    "paging": {
+      "page": "Of {pages}, page {page}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "repositories": {
+      "open": "Repositories, these are",
+      "title": "The repositories of {ruleName}, these are",
+      "lastListed": "Listed last {time}, they were",
+      "notListed": "Listed yet, they are not. This rule''s repositories, the next registry poll lists.",
+      "legend": "Before the rule, baseline repositories existed, so registers nothing in them, until from a preview you pick it. After the rule, new repositories were created, so automatically their modules register.",
+      "filterLabel": "Status",
+      "filterAll": "All statuses, show them",
+      "none": "Repositories yet, there are none.",
+      "noneWithStatus": "With this status, no repositories there are.",
+      "loadFailed": "Load the rule''s repositories, I could not",
+      "repository": "Repository",
+      "status": "Status",
+      "origin": "Origin, hmm",
+      "candidates": "Candidates, these are",
+      "lastChecked": "Checked last",
+      "error": "Error",
+      "renamed": "From, renamed it was",
+      "renamedFrom": "From {paths}, renamed it was",
+      "never": "never",
+      "candidateCount": "{count, plural, one {# module, there is} other {# modules, there are}}"
+    },
+    "grouped": {
+      "storedNote": "In each repository, what the last registry poll found, this is. From the VCS provider, nothing is read.",
+      "unsavedNote": "One page of repositories at a time, live, an unsaved rule reads. Save it you must, and every repository the poller will follow.",
+      "incomplete": "More repositories than Terrapod lists at once, this org or group has, so shown some are not.",
+      "selectRepository": "Every module in {repository}, select",
+      "noCandidates": "Modules to register here, there are none.",
+      "repositoryError": "Read this repository, I could not: {error}",
+      "confirmRegisterAll": "Every module this rule has found, register you will? Skipped, modules already registered or whose name is taken, are.",
+      "scanRepositories": "{count, plural, one {Scanned # repository, I have.} other {Scanned # repositories, I have.}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "Update, Bulk",
@@ -3248,5 +3313,60 @@
         "applying": "Uping"
       }
     }
+  },
+  "adminVault": {
+    "title": "Status of OpenBao/Vault",
+    "description": "Health, login and TLS trust for each OpenBao (or HashiCorp Vault) instance that Terrapod reads variables from, this is. Once a minute sampled it is; the server, opening this page never contacts.",
+    "disabled": "Enabled on this deployment, the OpenBao/Vault value source is not.",
+    "notSampled": "Sampled yet, it is not. Within a minute of the API starting, the first sample taken is.",
+    "cacheUnreachable": "Read, the status cache could not be. Unknown, the health of each instance therefore is.",
+    "sampledAt": "Sampled {time}, it was",
+    "refresh": "Refresh, you will",
+    "default": "Default, this one is",
+    "reachable": "Reachable, it is",
+    "unreachable": "Reachable, it is not",
+    "sealed": "Sealed, it is",
+    "unsealed": "Unsealed, it is",
+    "notInitialized": "Initialized, it is not",
+    "standby": "On standby, it waits",
+    "loginOk": "Well, the login went",
+    "loginFailed": "Failed, the login has",
+    "unknown": "Unknown, it is",
+    "address": "The address, this is",
+    "namespace": "The namespace, this is",
+    "authMethod": "Method of auth",
+    "tlsTrust": "Trust of TLS",
+    "version": "The version, this is",
+    "tokenTtl": "TTL of the token",
+    "checkedAt": "Checked, it was",
+    "lastError": "Last error of resolution",
+    "noLastError": "Recorded, none were",
+    "lastErrorLine": "At {time}, {kind}",
+    "tlsInstanceCa": "Only the CA of the instance",
+    "tlsGlobalBundle": "Global, the CA bundle",
+    "tlsDefault": "The trust store of the system",
+    "tlsSkipVerify": "Verified, it is not"
+  },
+  "vaultCheck": {
+    "check": "Check, you must",
+    "checking": "Checking, I am…",
+    "ok": "Resolve, this reference should.",
+    "notOk": "Resolve as it is, this reference will not.",
+    "error": "Run, the check could not: {message}",
+    "nameParses": "Valid, the reference is",
+    "nameInstance": "The OpenBao/Vault instance, this is",
+    "namePathAllowed": "Allowed, the path is",
+    "nameReadable": "Read it, Terrapod may",
+    "nameFieldsPresent": "Present, the fields are",
+    "statusPass": "Passed",
+    "statusFail": "Failed",
+    "statusSkipped": "Skipped, it was",
+    "statusUnknown": "Unknown, it is",
+    "keys": "In this secret, the keys",
+    "noKeys": "None, there are",
+    "noteDynamic": "Read by a check, a dynamic engine never is: mint a credential, each read would.",
+    "noteKeysNeedPlan": "Shown only to one who also a plan on this workspace can run, key names are.",
+    "noteLocal": "Locally this workspace runs, where resolve an OpenBao/Vault reference never does.",
+    "noteDisabled": "Enabled, the OpenBao/Vault value source is not."
   }
 }

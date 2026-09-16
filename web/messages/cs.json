@@ -34,7 +34,8 @@
     "closeMenu": "Zavřít nabídku",
     "ha": "Vysoká dostupnost",
     "deletedWorkspaces": "Smazané pracovní prostory",
-    "version": "Verze {version}"
+    "version": "Verze {version}",
+    "vault": "Stav OpenBao/Vault"
   },
   "switcher": {
     "language": "Jazyk",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {Zaregistrovat # modul} few {Zaregistrovat # moduly} many {Zaregistrovat # modulu} other {Zaregistrovat # modulů}}",
         "registering": "Registrace…",
         "failed": "Prohledání se nezdařilo",
-        "ruleLink": "Vytvořte pravidlo pro automatickou registraci nových modulů"
+        "ruleLink": "Vytvořte pravidlo pro automatickou registraci nových modulů",
+        "orgNote": "Zde je zobrazena jen první stránka repozitářů. Vytvořte pravidlo, které pokryje všechny repozitáře, včetně těch vytvořených později."
       },
       "versionCount": "{count, plural, one {# verze} few {# verze} many {# verze} other {# verzí}}",
       "loadFailed": "Nepodařilo se načíst moduly",
@@ -755,7 +757,8 @@
       "deleteRole": "Nepodařilo se smazat roli",
       "setAssignment": "Nepodařilo se nastavit přiřazení",
       "setAssignmentStatus": "Nepodařilo se nastavit přiřazení ({status})",
-      "deleteAssignment": "Nepodařilo se smazat přiřazení"
+      "deleteAssignment": "Nepodařilo se smazat přiřazení",
+      "conflictingLabelKeys": "{keys} má více než jednu hodnotu. Pravidlo štítku drží jednu hodnotu na klíč, takže poslední by tiše nahradila předchozí. Více hodnot pro jeden klíč API podporuje, ale zde je zatím nastavit nelze."
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "název už je obsazený",
     "reasonMissingProvider": "žádný poskytovatel",
     "confirmDelete": "Smazat pravidlo {name}? Moduly, které zaregistrovalo, zůstanou zaregistrované.",
-    "loadFailed": "Pravidla zjišťování modulů se nepodařilo načíst"
+    "loadFailed": "Pravidla zjišťování modulů se nepodařilo načíst",
+    "repoUrlHint": "Jeden repozitář, organizace nebo skupina (všechny repozitáře v ní), nebo vzor pokrývající repozitáře jedné organizace nebo skupiny, například {example}. Zástupné znaky glob se smí objevit jen v posledním segmentu. Terrapod při uložení určí, o který případ jde, a sám to už nikdy nezmění.",
+    "ownerPlaceholderHint": "Pravidlo, které pokrývá organizaci nebo skupinu, může použít i <owner></owner>: vlastníka repozitáře nebo skupinu.",
+    "targetKind": {
+      "repository": "Repozitář",
+      "namespace": "Organizace nebo skupina",
+      "pattern": "Vzor"
+    },
+    "attention": {
+      "badge": "Vyžaduje pozornost",
+      "title": "{name} vyžaduje pozornost",
+      "hint": "Pravidlo to zkusí znovu při další kontrole registru. Pokud byl jeho cíl smazán, upravte pravidlo tak, aby ukazovalo jinam."
+    },
+    "repoStatus": {
+      "active": "aktivní",
+      "archived": "archivováno",
+      "empty": "prázdné",
+      "noBranch": "žádná větev",
+      "outOfScope": "mimo rozsah",
+      "covered": "pokryto",
+      "error": "chyba"
+    },
+    "origin": {
+      "baseline": "výchozí stav",
+      "new": "nové"
+    },
+    "paging": {
+      "page": "Stránka {page} z {pages}",
+      "previous": "Předchozí",
+      "next": "Další"
+    },
+    "repositories": {
+      "open": "Repozitáře",
+      "title": "Repozitáře: {ruleName}",
+      "lastListed": "Naposledy vypsáno {time}",
+      "notListed": "Zatím nevypsáno. Další kontrola registru vypíše repozitáře tohoto pravidla.",
+      "legend": "Repozitáře ve výchozím stavu existovaly před pravidlem, takže se v nich nic neregistruje, dokud to nevyberete v náhledu. Nové repozitáře byly vytvořeny po pravidlu, takže se jejich moduly registrují automaticky.",
+      "filterLabel": "Stav",
+      "filterAll": "Všechny stavy",
+      "none": "Zatím žádné repozitáře.",
+      "noneWithStatus": "Žádné repozitáře s tímto stavem.",
+      "loadFailed": "Repozitáře pravidla se nepodařilo načíst",
+      "repository": "Repozitář",
+      "status": "Stav",
+      "origin": "Původ",
+      "candidates": "Kandidáti",
+      "lastChecked": "Naposledy zkontrolováno",
+      "error": "Chyba",
+      "renamed": "Přejmenováno z",
+      "renamedFrom": "Přejmenováno z {paths}",
+      "never": "nikdy",
+      "candidateCount": "{count, plural, one {# modul} few {# moduly} many {# modulu} other {# modulů}}"
+    },
+    "grouped": {
+      "storedNote": "Co poslední kontrola registru našla v každém repozitáři. Od poskytovatele VCS se nic nenačítá.",
+      "unsavedNote": "Neuložené pravidlo čte jednu stránku repozitářů najednou, přímo. Uložte ho, aby kontrola sledovala všechny repozitáře.",
+      "incomplete": "Tato organizace nebo skupina má více repozitářů, než Terrapod najednou vypíše, takže některé nejsou zobrazeny.",
+      "selectRepository": "Vybrat všechny moduly v {repository}",
+      "noCandidates": "Zde nejsou žádné moduly k registraci.",
+      "repositoryError": "Tento repozitář se nepodařilo načíst: {error}",
+      "confirmRegisterAll": "Zaregistrovat všechny moduly, které toto pravidlo našlo? Moduly, které jsou již zaregistrované nebo jejichž název je obsazený, se přeskočí.",
+      "scanRepositories": "{count, plural, one {Prohledán # repozitář.} few {Prohledány # repozitáře.} many {Prohledáno # repozitáře.} other {Prohledáno # repozitářů.}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "Hromadná aktualizace",
@@ -3248,5 +3313,60 @@
         "applying": "Aplikování"
       }
     }
+  },
+  "adminVault": {
+    "title": "Stav OpenBao/Vault",
+    "description": "Dostupnost, přihlášení a důvěra TLS pro každou instanci OpenBao (nebo HashiCorp Vault), ze které Terrapod čte proměnné. Vzorkuje se jednou za minutu; otevření této stránky server nikdy nekontaktuje.",
+    "disabled": "Zdroj hodnot OpenBao/Vault není v tomto nasazení zapnutý.",
+    "notSampled": "Zatím nevzorkováno. První vzorek se odebere do minuty od spuštění API.",
+    "cacheUnreachable": "Mezipaměť stavu nelze přečíst, stav každé instance je proto neznámý.",
+    "sampledAt": "Vzorkováno {time}",
+    "refresh": "Obnovit",
+    "default": "Výchozí",
+    "reachable": "Dostupný",
+    "unreachable": "Nedostupný",
+    "sealed": "Zapečetěný",
+    "unsealed": "Odpečetěný",
+    "notInitialized": "Neinicializovaný",
+    "standby": "Pohotovost",
+    "loginOk": "Přihlášení OK",
+    "loginFailed": "Přihlášení selhalo",
+    "unknown": "Neznámý",
+    "address": "Adresa",
+    "namespace": "Jmenný prostor",
+    "authMethod": "Metoda ověření",
+    "tlsTrust": "Důvěra TLS",
+    "version": "Verze",
+    "tokenTtl": "TTL tokenu",
+    "checkedAt": "Zkontrolováno",
+    "lastError": "Poslední chyba rozlišení",
+    "noLastError": "Nic nezaznamenáno",
+    "lastErrorLine": "{kind} v {time}",
+    "tlsInstanceCa": "Pouze CA instance",
+    "tlsGlobalBundle": "Globální balík CA",
+    "tlsDefault": "Systémové úložiště důvěry",
+    "tlsSkipVerify": "Neověřeno"
+  },
+  "vaultCheck": {
+    "check": "Zkontrolovat",
+    "checking": "Probíhá kontrola…",
+    "ok": "Tento odkaz by se měl rozlišit.",
+    "notOk": "Tento odkaz se v současné podobě nerozliší.",
+    "error": "Kontrolu nelze spustit: {message}",
+    "nameParses": "Odkaz je platný",
+    "nameInstance": "Instance OpenBao/Vault",
+    "namePathAllowed": "Cesta povolena",
+    "nameReadable": "Terrapod ji smí číst",
+    "nameFieldsPresent": "Pole jsou přítomna",
+    "statusPass": "Vyhovuje",
+    "statusFail": "Nevyhovuje",
+    "statusSkipped": "Přeskočeno",
+    "statusUnknown": "Neznámé",
+    "keys": "Klíče v tomto tajemství",
+    "noKeys": "Žádné",
+    "noteDynamic": "Kontrola nikdy nečte dynamický engine: každé čtení by vydalo přihlašovací údaje.",
+    "noteKeysNeedPlan": "Názvy klíčů vidí jen ten, kdo v tomto pracovním prostoru smí také spustit plán.",
+    "noteLocal": "Tento pracovní prostor běží lokálně, kde se odkaz na OpenBao/Vault nikdy nerozliší.",
+    "noteDisabled": "Zdroj hodnot OpenBao/Vault není zapnutý."
   }
 }

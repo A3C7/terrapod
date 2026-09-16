@@ -34,7 +34,8 @@
     "closeMenu": "Close menu",
     "ha": "High availability",
     "deletedWorkspaces": "Deleted workspaces",
-    "version": "Version {version}"
+    "version": "Version {version}",
+    "vault": "OpenBao/Vault status"
   },
   "switcher": {
     "language": "Language",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {Register # module} other {Register # modules}}",
         "registering": "Registering…",
         "failed": "Scan failed",
-        "ruleLink": "Create a rule to register new modules automatically"
+        "ruleLink": "Create a rule to register new modules automatically",
+        "orgNote": "Only the first page of repositories is shown here. Create a rule to cover every repository, including ones created later."
       },
       "versionCount": "{count, plural, one {# version} other {# versions}}",
       "loadFailed": "Failed to load modules",
@@ -755,7 +757,8 @@
       "deleteRole": "Failed to delete role",
       "setAssignment": "Failed to set assignment",
       "setAssignmentStatus": "Failed to set assignment ({status})",
-      "deleteAssignment": "Failed to delete assignment"
+      "deleteAssignment": "Failed to delete assignment",
+      "conflictingLabelKeys": "{keys} is given more than one value. A label rule holds one value per key, so the last would silently replace the earlier ones. Matching several values for one key is supported by the API but cannot yet be set here."
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "name already taken",
     "reasonMissingProvider": "no provider",
     "confirmDelete": "Delete the rule {name}? The modules it registered stay registered.",
-    "loadFailed": "Failed to load module autodiscovery rules"
+    "loadFailed": "Failed to load module autodiscovery rules",
+    "repoUrlHint": "One repository, an org or group (every repository in it), or a pattern over one org or group''s repositories, such as {example}. Glob characters go in the last segment only. Terrapod works out which when you save, and never changes it on its own.",
+    "ownerPlaceholderHint": "A rule that covers an org or group can also use <owner></owner>: the repository''s owner or group.",
+    "targetKind": {
+      "repository": "Repository",
+      "namespace": "Org or group",
+      "pattern": "Pattern"
+    },
+    "attention": {
+      "badge": "Needs attention",
+      "title": "{name} needs attention",
+      "hint": "A rule tries again on the next registry poll. If its target was deleted, edit the rule to point it somewhere else."
+    },
+    "repoStatus": {
+      "active": "active",
+      "archived": "archived",
+      "empty": "empty",
+      "noBranch": "no branch",
+      "outOfScope": "out of scope",
+      "covered": "covered",
+      "error": "error"
+    },
+    "origin": {
+      "baseline": "baseline",
+      "new": "new"
+    },
+    "paging": {
+      "page": "Page {page} of {pages}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "repositories": {
+      "open": "Repositories",
+      "title": "Repositories: {ruleName}",
+      "lastListed": "Last listed {time}",
+      "notListed": "Not listed yet. The next registry poll lists this rule''s repositories.",
+      "legend": "Baseline repositories existed before the rule, so nothing in them registers until you pick it from a preview. New repositories were created after the rule, so their modules register automatically.",
+      "filterLabel": "Status",
+      "filterAll": "All statuses",
+      "none": "No repositories yet.",
+      "noneWithStatus": "No repositories with this status.",
+      "loadFailed": "Failed to load the rule''s repositories",
+      "repository": "Repository",
+      "status": "Status",
+      "origin": "Origin",
+      "candidates": "Candidates",
+      "lastChecked": "Last checked",
+      "error": "Error",
+      "renamed": "Renamed from",
+      "renamedFrom": "Renamed from {paths}",
+      "never": "never",
+      "candidateCount": "{count, plural, one {# module} other {# modules}}"
+    },
+    "grouped": {
+      "storedNote": "What the last registry poll found in each repository. Nothing is read from the VCS provider.",
+      "unsavedNote": "An unsaved rule reads one page of repositories at a time, live. Save it to have the poller follow every repository.",
+      "incomplete": "This org or group has more repositories than Terrapod lists at once, so some are not shown.",
+      "selectRepository": "Select every module in {repository}",
+      "noCandidates": "No modules to register here.",
+      "repositoryError": "Could not read this repository: {error}",
+      "confirmRegisterAll": "Register every module this rule has found? Modules already registered, or whose name is taken, are skipped.",
+      "scanRepositories": "{count, plural, one {Scanned # repository.} other {Scanned # repositories.}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "Bulk Update",
@@ -3248,5 +3313,60 @@
         "applying": "Updating"
       }
     }
+  },
+  "adminVault": {
+    "title": "OpenBao/Vault status",
+    "description": "Health, login and TLS trust for each OpenBao (or HashiCorp Vault) instance Terrapod reads variables from. Sampled once a minute; opening this page never contacts the server.",
+    "disabled": "The OpenBao/Vault value source is not enabled on this deployment.",
+    "notSampled": "Not sampled yet. The first sample is taken within a minute of the API starting.",
+    "cacheUnreachable": "The status cache could not be read, so the health of each instance is unknown.",
+    "sampledAt": "Sampled {time}",
+    "refresh": "Refresh",
+    "default": "Default",
+    "reachable": "Reachable",
+    "unreachable": "Unreachable",
+    "sealed": "Sealed",
+    "unsealed": "Unsealed",
+    "notInitialized": "Not initialized",
+    "standby": "Standby",
+    "loginOk": "Login OK",
+    "loginFailed": "Login failed",
+    "unknown": "Unknown",
+    "address": "Address",
+    "namespace": "Namespace",
+    "authMethod": "Auth method",
+    "tlsTrust": "TLS trust",
+    "version": "Version",
+    "tokenTtl": "Token TTL",
+    "checkedAt": "Checked",
+    "lastError": "Last resolution error",
+    "noLastError": "None recorded",
+    "lastErrorLine": "{kind} at {time}",
+    "tlsInstanceCa": "Instance CA only",
+    "tlsGlobalBundle": "Global CA bundle",
+    "tlsDefault": "System trust store",
+    "tlsSkipVerify": "Not verified"
+  },
+  "vaultCheck": {
+    "check": "Check",
+    "checking": "Checking…",
+    "ok": "This reference should resolve.",
+    "notOk": "This reference will not resolve as it is.",
+    "error": "The check could not run: {message}",
+    "nameParses": "Reference is valid",
+    "nameInstance": "OpenBao/Vault instance",
+    "namePathAllowed": "Path allowed",
+    "nameReadable": "Terrapod may read it",
+    "nameFieldsPresent": "Fields present",
+    "statusPass": "Pass",
+    "statusFail": "Fail",
+    "statusSkipped": "Skipped",
+    "statusUnknown": "Unknown",
+    "keys": "Keys in this secret",
+    "noKeys": "None",
+    "noteDynamic": "A dynamic engine is never read by a check: each read would mint a credential.",
+    "noteKeysNeedPlan": "Key names are shown only to someone who can also run a plan on this workspace.",
+    "noteLocal": "This workspace runs locally, where an OpenBao/Vault reference never resolves.",
+    "noteDisabled": "The OpenBao/Vault value source is not enabled."
   }
 }

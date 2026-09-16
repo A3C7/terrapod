@@ -34,7 +34,8 @@
     "closeMenu": "メニューを閉じる",
     "ha": "高可用性",
     "deletedWorkspaces": "削除されたワークスペース",
-    "version": "バージョン {version}"
+    "version": "バージョン {version}",
+    "vault": "OpenBao/Vault の状態"
   },
   "switcher": {
     "language": "言語",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {# 個のモジュールを登録} other {# 個のモジュールを登録}}",
         "registering": "登録中…",
         "failed": "スキャンに失敗しました",
-        "ruleLink": "新しいモジュールを自動登録するルールを作成"
+        "ruleLink": "新しいモジュールを自動登録するルールを作成",
+        "orgNote": "ここには最初のページのリポジトリのみが表示されます。以降に作成されるものを含め、すべてのリポジトリを対象にするにはルールを作成してください。"
       },
       "versionCount": "{count, plural, one {# 個のバージョン} other {# 個のバージョン}}",
       "loadFailed": "モジュールの読み込みに失敗しました",
@@ -755,7 +757,8 @@
       "deleteRole": "ロールの削除に失敗しました",
       "setAssignment": "割り当ての設定に失敗しました",
       "setAssignmentStatus": "割り当ての設定に失敗しました（{status}）",
-      "deleteAssignment": "割り当ての削除に失敗しました"
+      "deleteAssignment": "割り当ての削除に失敗しました",
+      "conflictingLabelKeys": "{keys} に複数の値が指定されています。ラベルルールはキーごとに 1 つの値しか保持しないため、最後の値が以前の値を暗黙的に置き換えます。1 つのキーに複数の値を指定することは API では可能ですが、ここではまだ設定できません。"
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "名前が使用済み",
     "reasonMissingProvider": "プロバイダーなし",
     "confirmDelete": "ルール {name} を削除しますか？登録済みのモジュールはそのまま残ります。",
-    "loadFailed": "モジュール自動検出ルールを読み込めませんでした"
+    "loadFailed": "モジュール自動検出ルールを読み込めませんでした",
+    "repoUrlHint": "1つのリポジトリ、組織またはグループ（その中のすべてのリポジトリ）、あるいは1つの組織またはグループのリポジトリに対するパターン（{example} など）を指定できます。globの文字が使えるのは最後のセグメントのみです。保存時にTerrapodがどちらであるかを判定し、以降は自分で変更することはありません。",
+    "ownerPlaceholderHint": "組織またはグループを対象とするルールでは、<owner></owner>（リポジトリの所有者または組織）も使用できます。",
+    "targetKind": {
+      "repository": "リポジトリ",
+      "namespace": "組織またはグループ",
+      "pattern": "パターン"
+    },
+    "attention": {
+      "badge": "要確認",
+      "title": "{name} は確認が必要です",
+      "hint": "ルールは次回のレジストリポーリングで再試行します。対象が削除された場合は、ルールを編集して別の対象を指定してください。"
+    },
+    "repoStatus": {
+      "active": "有効",
+      "archived": "アーカイブ済み",
+      "empty": "空",
+      "noBranch": "ブランチなし",
+      "outOfScope": "対象外",
+      "covered": "カバー済み",
+      "error": "エラー"
+    },
+    "origin": {
+      "baseline": "ベースライン",
+      "new": "新規"
+    },
+    "paging": {
+      "page": "{pages} ページ中 {page} ページ目",
+      "previous": "前へ",
+      "next": "次へ"
+    },
+    "repositories": {
+      "open": "リポジトリ",
+      "title": "リポジトリ: {ruleName}",
+      "lastListed": "最終取得: {time}",
+      "notListed": "まだ取得されていません。次回のレジストリポーリングでこのルールのリポジトリを取得します。",
+      "legend": "ベースラインのリポジトリはルール作成前から存在していたため、プレビューで選択するまで何も登録されません。新規リポジトリはルール作成後に作られたため、そのモジュールは自動的に登録されます。",
+      "filterLabel": "ステータス",
+      "filterAll": "すべてのステータス",
+      "none": "リポジトリがまだありません。",
+      "noneWithStatus": "このステータスのリポジトリはありません。",
+      "loadFailed": "ルールのリポジトリの読み込みに失敗しました",
+      "repository": "リポジトリ",
+      "status": "ステータス",
+      "origin": "由来",
+      "candidates": "候補",
+      "lastChecked": "最終確認",
+      "error": "エラー",
+      "renamed": "変更前の名前",
+      "renamedFrom": "{paths} から名前変更",
+      "never": "なし",
+      "candidateCount": "{count, plural, other {モジュール # 個}}"
+    },
+    "grouped": {
+      "storedNote": "前回のレジストリポーリングで各リポジトリから検出された内容です。VCSプロバイダーからは何も読み取りません。",
+      "unsavedNote": "未保存のルールは、一度に1ページ分のリポジトリをライブで読み取ります。保存すると、ポーラーがすべてのリポジトリを追跡するようになります。",
+      "incomplete": "この組織またはグループには、Terrapodが一度に表示できる数を超えるリポジトリがあるため、一部は表示されていません。",
+      "selectRepository": "{repository} 内のすべてのモジュールを選択",
+      "noCandidates": "ここに登録できるモジュールはありません。",
+      "repositoryError": "このリポジトリを読み取れませんでした: {error}",
+      "confirmRegisterAll": "このルールが見つけたすべてのモジュールを登録しますか？ すでに登録済みのモジュールや、名前が既に使用されているモジュールはスキップされます。",
+      "scanRepositories": "{count, plural, other {# 個のリポジトリをスキャンしました。}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "一括更新",
@@ -3248,5 +3313,60 @@
         "applying": "適用中"
       }
     }
+  },
+  "adminVault": {
+    "title": "OpenBao/Vault の状態",
+    "description": "Terrapod が変数を読み取る各 OpenBao（または HashiCorp Vault）インスタンスの稼働状況、ログイン、TLS の信頼。1 分ごとに取得し、このページを開いてもサーバーには接続しません。",
+    "disabled": "このデプロイでは OpenBao/Vault 値ソースが有効になっていません。",
+    "notSampled": "まだ取得されていません。最初の取得は API の起動後 1 分以内に行われます。",
+    "cacheUnreachable": "状態キャッシュを読み取れないため、各インスタンスの稼働状況は不明です。",
+    "sampledAt": "{time} に取得",
+    "refresh": "更新",
+    "default": "デフォルト",
+    "reachable": "到達可能",
+    "unreachable": "到達不能",
+    "sealed": "シール済み",
+    "unsealed": "アンシール済み",
+    "notInitialized": "未初期化",
+    "standby": "スタンバイ",
+    "loginOk": "ログイン OK",
+    "loginFailed": "ログイン失敗",
+    "unknown": "不明",
+    "address": "アドレス",
+    "namespace": "ネームスペース",
+    "authMethod": "認証方式",
+    "tlsTrust": "TLS の信頼",
+    "version": "バージョン",
+    "tokenTtl": "トークン TTL",
+    "checkedAt": "確認日時",
+    "lastError": "直近の解決エラー",
+    "noLastError": "記録なし",
+    "lastErrorLine": "{time} に {kind}",
+    "tlsInstanceCa": "インスタンスの CA のみ",
+    "tlsGlobalBundle": "グローバル CA バンドル",
+    "tlsDefault": "システムの信頼ストア",
+    "tlsSkipVerify": "検証なし"
+  },
+  "vaultCheck": {
+    "check": "チェック",
+    "checking": "チェック中…",
+    "ok": "この参照は解決できるはずです。",
+    "notOk": "この参照はこのままでは解決できません。",
+    "error": "チェックを実行できませんでした: {message}",
+    "nameParses": "参照が有効",
+    "nameInstance": "OpenBao/Vault インスタンス",
+    "namePathAllowed": "パスが許可されている",
+    "nameReadable": "Terrapod が読み取れる",
+    "nameFieldsPresent": "フィールドが存在する",
+    "statusPass": "合格",
+    "statusFail": "失敗",
+    "statusSkipped": "スキップ",
+    "statusUnknown": "不明",
+    "keys": "このシークレットのキー",
+    "noKeys": "なし",
+    "noteDynamic": "チェックは動的エンジンを読み取りません。読み取るたびに認証情報が発行されるためです。",
+    "noteKeysNeedPlan": "キー名は、このワークスペースでプランも実行できるユーザーにのみ表示されます。",
+    "noteLocal": "このワークスペースはローカルで実行されるため、OpenBao/Vault 参照は解決されません。",
+    "noteDisabled": "OpenBao/Vault 値ソースが有効になっていません。"
   }
 }

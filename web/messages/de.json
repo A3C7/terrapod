@@ -34,7 +34,8 @@
     "closeMenu": "Menü schließen",
     "ha": "Hochverfügbarkeit",
     "deletedWorkspaces": "Gelöschte Workspaces",
-    "version": "Version {version}"
+    "version": "Version {version}",
+    "vault": "OpenBao/Vault-Status"
   },
   "switcher": {
     "language": "Sprache",
@@ -398,7 +399,8 @@
         "register": "{count, plural, one {# Modul registrieren} other {# Module registrieren}}",
         "registering": "Wird registriert…",
         "failed": "Durchsuchen fehlgeschlagen",
-        "ruleLink": "Regel erstellen, um neue Module automatisch zu registrieren"
+        "ruleLink": "Regel erstellen, um neue Module automatisch zu registrieren",
+        "orgNote": "Hier wird nur die erste Seite der Repositorys angezeigt. Erstellen Sie eine Regel, um jedes Repository abzudecken, auch später erstellte."
       },
       "versionCount": "{count, plural, one {# Version} other {# Versionen}}",
       "loadFailed": "Module konnten nicht geladen werden",
@@ -755,7 +757,8 @@
       "deleteRole": "Rolle konnte nicht gelöscht werden",
       "setAssignment": "Zuweisung konnte nicht festgelegt werden",
       "setAssignmentStatus": "Zuweisung konnte nicht festgelegt werden ({status})",
-      "deleteAssignment": "Zuweisung konnte nicht gelöscht werden"
+      "deleteAssignment": "Zuweisung konnte nicht gelöscht werden",
+      "conflictingLabelKeys": "{keys} hat mehr als einen Wert. Eine Label-Regel hält einen Wert pro Schlüssel, der letzte würde die früheren stillschweigend ersetzen. Mehrere Werte für einen Schlüssel unterstützt die API, hier aber noch nicht einstellbar."
     }
   },
   "adminVcs": {
@@ -1128,7 +1131,69 @@
     "reasonNameTaken": "Name bereits belegt",
     "reasonMissingProvider": "kein Provider",
     "confirmDelete": "Regel {name} löschen? Die von ihr registrierten Module bleiben registriert.",
-    "loadFailed": "Regeln für die automatische Modulerkennung konnten nicht geladen werden"
+    "loadFailed": "Regeln für die automatische Modulerkennung konnten nicht geladen werden",
+    "repoUrlHint": "Ein Repository, eine Organisation oder Gruppe (jedes Repository darin) oder ein Muster über die Repositorys einer Organisation oder Gruppe, z. B. {example}. Glob-Zeichen stehen nur im letzten Segment. Terrapod ermittelt beim Speichern, um welchen Typ es sich handelt, und ändert dies danach nie von sich aus.",
+    "ownerPlaceholderHint": "Eine Regel, die eine Organisation oder Gruppe abdeckt, kann auch <owner></owner> verwenden: den Eigentümer oder die Gruppe des Repositorys.",
+    "targetKind": {
+      "repository": "Repository",
+      "namespace": "Organisation oder Gruppe",
+      "pattern": "Muster"
+    },
+    "attention": {
+      "badge": "Erfordert Aufmerksamkeit",
+      "title": "{name} erfordert Aufmerksamkeit",
+      "hint": "Eine Regel versucht es bei der nächsten Registry-Abfrage erneut. Wurde ihr Ziel gelöscht, bearbeiten Sie die Regel, um sie auf etwas anderes zu verweisen."
+    },
+    "repoStatus": {
+      "active": "aktiv",
+      "archived": "archiviert",
+      "empty": "leer",
+      "noBranch": "kein Branch",
+      "outOfScope": "außerhalb des Geltungsbereichs",
+      "covered": "abgedeckt",
+      "error": "Fehler"
+    },
+    "origin": {
+      "baseline": "Baseline",
+      "new": "neu"
+    },
+    "paging": {
+      "page": "Seite {page} von {pages}",
+      "previous": "Zurück",
+      "next": "Weiter"
+    },
+    "repositories": {
+      "open": "Repositorys",
+      "title": "Repositorys: {ruleName}",
+      "lastListed": "Zuletzt aufgelistet {time}",
+      "notListed": "Noch nicht aufgelistet. Die nächste Registry-Abfrage listet die Repositorys dieser Regel auf.",
+      "legend": "Baseline-Repositorys bestanden schon vor der Regel, daher wird darin nichts registriert, bis Sie es aus einer Vorschau auswählen. Neue Repositorys wurden nach der Regel erstellt, daher werden ihre Module automatisch registriert.",
+      "filterLabel": "Status",
+      "filterAll": "Alle Status",
+      "none": "Noch keine Repositorys.",
+      "noneWithStatus": "Keine Repositorys mit diesem Status.",
+      "loadFailed": "Die Repositorys der Regel konnten nicht geladen werden",
+      "repository": "Repository",
+      "status": "Status",
+      "origin": "Herkunft",
+      "candidates": "Kandidaten",
+      "lastChecked": "Zuletzt geprüft",
+      "error": "Fehler",
+      "renamed": "Umbenannt von",
+      "renamedFrom": "Umbenannt von {paths}",
+      "never": "nie",
+      "candidateCount": "{count, plural, one {# Modul} other {# Module}}"
+    },
+    "grouped": {
+      "storedNote": "Was die letzte Registry-Abfrage in jedem Repository gefunden hat. Es wird nichts vom VCS-Anbieter gelesen.",
+      "unsavedNote": "Eine ungespeicherte Regel liest jeweils eine Seite von Repositorys live. Speichern Sie sie, damit die Abfrage jedem Repository folgt.",
+      "incomplete": "Diese Organisation oder Gruppe hat mehr Repositorys, als Terrapod auf einmal auflistet, daher werden einige nicht angezeigt.",
+      "selectRepository": "Jedes Modul in {repository} auswählen",
+      "noCandidates": "Keine Module zum Registrieren hier.",
+      "repositoryError": "Dieses Repository konnte nicht gelesen werden: {error}",
+      "confirmRegisterAll": "Jedes von dieser Regel gefundene Modul registrieren? Bereits registrierte Module oder Module, deren Name bereits vergeben ist, werden übersprungen.",
+      "scanRepositories": "{count, plural, one {# Repository durchsucht.} other {# Repositorys durchsucht.}}"
+    }
   },
   "adminBulkUpdate": {
     "title": "Massenaktualisierung",
@@ -3248,5 +3313,60 @@
         "applying": "Wird angewendet"
       }
     }
+  },
+  "adminVault": {
+    "title": "OpenBao/Vault-Status",
+    "description": "Erreichbarkeit, Anmeldung und TLS-Vertrauen für jede OpenBao-Instanz (oder HashiCorp-Vault-Instanz), aus der Terrapod Variablen liest. Einmal pro Minute erfasst; diese Seite kontaktiert den Server nie.",
+    "disabled": "Die OpenBao/Vault-Wertquelle ist in dieser Installation nicht aktiviert.",
+    "notSampled": "Noch nicht erfasst. Die erste Erfassung erfolgt innerhalb einer Minute nach dem Start der API.",
+    "cacheUnreachable": "Der Status-Cache konnte nicht gelesen werden, daher ist der Zustand jeder Instanz unbekannt.",
+    "sampledAt": "Erfasst {time}",
+    "refresh": "Aktualisieren",
+    "default": "Standard",
+    "reachable": "Erreichbar",
+    "unreachable": "Nicht erreichbar",
+    "sealed": "Versiegelt",
+    "unsealed": "Entsiegelt",
+    "notInitialized": "Nicht initialisiert",
+    "standby": "Standby",
+    "loginOk": "Anmeldung OK",
+    "loginFailed": "Anmeldung fehlgeschlagen",
+    "unknown": "Unbekannt",
+    "address": "Adresse",
+    "namespace": "Namespace",
+    "authMethod": "Anmeldemethode",
+    "tlsTrust": "TLS-Vertrauen",
+    "version": "Version",
+    "tokenTtl": "Token-TTL",
+    "checkedAt": "Geprüft",
+    "lastError": "Letzter Auflösungsfehler",
+    "noLastError": "Keiner erfasst",
+    "lastErrorLine": "{kind} um {time}",
+    "tlsInstanceCa": "Nur Instanz-CA",
+    "tlsGlobalBundle": "Globales CA-Bundle",
+    "tlsDefault": "System-Zertifikatsspeicher",
+    "tlsSkipVerify": "Nicht verifiziert"
+  },
+  "vaultCheck": {
+    "check": "Prüfen",
+    "checking": "Wird geprüft…",
+    "ok": "Diese Referenz sollte aufgelöst werden.",
+    "notOk": "Diese Referenz lässt sich so nicht auflösen.",
+    "error": "Die Prüfung konnte nicht laufen: {message}",
+    "nameParses": "Referenz ist gültig",
+    "nameInstance": "OpenBao/Vault-Instanz",
+    "namePathAllowed": "Pfad erlaubt",
+    "nameReadable": "Terrapod darf lesen",
+    "nameFieldsPresent": "Felder vorhanden",
+    "statusPass": "OK",
+    "statusFail": "Fehler",
+    "statusSkipped": "Übersprungen",
+    "statusUnknown": "Unbekannt",
+    "keys": "Schlüssel in diesem Secret",
+    "noKeys": "Keine",
+    "noteDynamic": "Eine dynamische Engine wird bei einer Prüfung nie gelesen: Jeder Lesevorgang würde ein Credential erzeugen.",
+    "noteKeysNeedPlan": "Schlüsselnamen sieht nur, wer in diesem Workspace auch einen Plan ausführen darf.",
+    "noteLocal": "Dieser Workspace läuft lokal, wo eine OpenBao/Vault-Referenz nie aufgelöst wird.",
+    "noteDisabled": "Die OpenBao/Vault-Wertquelle ist nicht aktiviert."
   }
 }
