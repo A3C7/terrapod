@@ -37,7 +37,7 @@ from terrapod.db.models import (
 )
 from terrapod.db.session import get_db_session
 from terrapod.logging_config import get_logger
-from terrapod.services import github_service, gitlab_service
+from terrapod.services import github_service, gitlab_service, run_links
 from terrapod.services.scheduler import enqueue_trigger
 
 logger = get_logger(__name__)
@@ -284,27 +284,6 @@ async def _collect_gates(db, run_id: uuid.UUID) -> tuple[GateVerdict, ...]:
     return tuple(gates)
 
 
-def _run_url(workspace_id: uuid.UUID, run_id: uuid.UUID) -> str | None:
-    """Run page for a row, or None when `external_url` is not configured.
-
-    A reviewer who sees `+3` or `blocked by policy` needs a way through to the
-    plan and the findings; the sibling per-workspace comment has always given
-    them one, and a table without links is strictly less useful than it.
-
-    The same URL is built in two other places — `slack_notify_service.run_url`
-    and `vcs_status_dispatcher` (inline, at the commit-status call). This is a
-    third copy rather than an import because both alternatives are worse here:
-    importing the Slack service from the VCS comment renderer is a dependency
-    edge in the wrong direction, and hoisting a shared helper means touching
-    the notification path, which this change has no business in. Kept as one
-    expression so the duplication stays obvious rather than load-bearing.
-    """
-    from terrapod.config import settings
-
-    base = (settings.external_url or "").rstrip("/")
-    return f"{base}/workspaces/{workspace_id}/runs/{run_id}" if base else None
-
-
 def _signed_amount(amount: float) -> str:
     """`+412`, `-18.50` — sign always shown, pence only when there are any."""
     text = f"{amount:,.0f}" if float(amount).is_integer() else f"{amount:,.2f}"
@@ -472,7 +451,7 @@ async def _collect_rows(db, sess: PRSession) -> list[_Row]:
                 mergeable_summary=_mergeable_summary(run),
                 cost_delta=_cost_delta(run),
                 gates=await _collect_gates(db, run.id),
-                run_url=_run_url(ws.id, run.id),
+                run_url=run_links.run_url(ws.id, run.id),
             )
         )
     return rows

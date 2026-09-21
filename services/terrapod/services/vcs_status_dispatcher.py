@@ -11,11 +11,10 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select
 
-from terrapod.config import settings
 from terrapod.db.models import PlanSummary, Run, VCSConnection, Workspace
 from terrapod.db.session import get_db_session
 from terrapod.logging_config import get_logger
-from terrapod.services import github_service, gitlab_service
+from terrapod.services import github_service, gitlab_service, run_links
 
 logger = get_logger(__name__)
 
@@ -411,10 +410,9 @@ async def handle_vcs_commit_status(payload: dict) -> None:
             target_status, run.plan_only, has_changes
         )
 
-        # Build target URL
-        target_url = ""
-        if settings.external_url:
-            target_url = f"{settings.external_url.rstrip('/')}/workspaces/{ws.id}/runs/{run.id}"
+        # Build target URL. "" rather than None because the provider clients
+        # take a plain string for the commit status's target.
+        target_url = run_links.run_url(ws.id, run.id) or ""
 
         # Scope context to the workspace so multiple workspaces linked to the
         # same PR (e.g. module-impact fan-out) each get a distinct check,
