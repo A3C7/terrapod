@@ -1770,3 +1770,71 @@ class TestClosedPRCancelIsScopedToItsRepository:
         db = self._db([sess], [])
         await _reconcile_closed_pr_sessions(db, _mock_connection(), "org/repo", {7})
         assert sess.state == "open"
+
+
+class TestPRSessionIsCreatedInBothModes:
+    """The PR status comment must reach merge_then_apply PRs too.
+
+    The comment is driven off a PRSession: no session, no
+    `vcs_status_comment_update` trigger, no comment. Creating the session only
+    for apply_then_merge left the default mode with nothing but the
+    per-workspace link comment, so the plan counts, the cost delta and the gate
+    verdicts never reached the mode most workspaces use. The renderer has
+    always handled both ("will apply on merge" is its merge_then_apply cell).
+    """
+
+    def _pr(self):
+        pr = MagicMock()
+        pr.number = 7
+        pr.head_sha = "deadbeefcafe"
+        pr.head_ref = "feature/x"
+        pr.title = "add a thing"
+        return pr
+
+    def _db(self):
+        db = AsyncMock()
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = None
+        result.scalars.return_value.all.return_value = []
+        db.execute.return_value = result
+        return db
+
+    async def _run_poll(self, workflow):
+        from terrapod.services.vcs_poller import _poll_workspace_prs
+
+        ws = _mock_workspace(vcs_last_commit_sha="aaa111")
+        ws.vcs_workflow = workflow
+        run = MagicMock()
+        run.id = uuid.uuid4()
+        sess = MagicMock()
+        sess.id = uuid.uuid4()
+
+        with (
+            patch(
+                "terrapod.services.vcs_poller._list_open_prs",
+                AsyncMock(return_value=[self._pr()]),
+            ),
+            patch("terrapod.services.vcs_poller._create_vcs_run", AsyncMock(return_value=run)),
+            patch(
+                "terrapod.services.vcs_poller._upsert_pr_session",
+                AsyncMock(return_value=sess),
+            ) as upsert,
+            patch("terrapod.services.vcs_poller._reconcile_closed_pr_sessions", AsyncMock()),
+            patch("terrapod.services.vcs_poller._poll_pr_comments", AsyncMock()),
+            patch("terrapod.services.vcs_poller.enqueue_trigger", AsyncMock()) as enqueue,
+        ):
+            await _poll_workspace_prs(self._db(), ws, _mock_connection(), "org", "repo", "main")
+        return upsert, enqueue, sess
+
+    async def test_merge_then_apply_creates_a_session_and_triggers_the_comment(self):
+        upsert, enqueue, sess = await self._run_poll("merge_then_apply")
+        upsert.assert_awaited_once()
+        triggers = [c.args[0] for c in enqueue.await_args_list]
+        assert "vcs_status_comment_update" in triggers
+
+    async def test_apply_then_merge_still_creates_a_session(self):
+        """The existing mode must keep working — this widens, it does not move."""
+        upsert, enqueue, sess = await self._run_poll("apply_then_merge")
+        upsert.assert_awaited_once()
+        triggers = [c.args[0] for c in enqueue.await_args_list]
+        assert "vcs_status_comment_update" in triggers

@@ -1030,17 +1030,42 @@ async def _poll_workspace_prs(
 
         if run:
             VCS_RUNS_CREATED.labels(provider=conn.provider, type="pr").inc()
-            # For apply-then-merge, upsert the conversation-state row so
-            # later phases (status comment, dispatcher) can hang state
-            # off a stable PRSession id without re-querying the VCS.
-            if is_apply_then_merge:
-                sess = await _upsert_pr_session(db, conn, f"{owner}/{repo}", pr.number, pr.head_sha)
-                # Fire the status-comment refresh asynchronously so the
-                # poll cycle isn't blocked on the VCS API write.
+            # Upsert the conversation-state row so later phases (status
+            # comment, dispatcher) can hang state off a stable PRSession id
+            # without re-querying the VCS.
+            #
+            # Both modes, not just apply-then-merge: the PR status comment is
+            # driven off a PRSession, so restricting the row to one mode left
+            # merge-then-apply PRs with only the per-workspace link comment —
+            # no plan counts, no cost delta, no gate verdicts — although the
+            # renderer has always had a merge-then-apply cell ("will apply on
+            # merge"). The mode-specific fallbacks above (closed-PR
+            # reconciliation, comment-command polling) stay apply-then-merge
+            # only, because those drive applies rather than reporting.
+            sess = await _upsert_pr_session(db, conn, f"{owner}/{repo}", pr.number, pr.head_sha)
+            # Fire the status-comment refresh asynchronously so the
+            # poll cycle isn't blocked on the VCS API write.
+            #
+            # Deliberately best-effort (no retry): the enqueue needs Redis, and
+            # the run is created but NOT yet committed at this point, so a
+            # raising enqueue would roll the run back and leave the PR unplanned
+            # for as long as Redis is down. A missing comment is worth less than
+            # a missing plan. The plan-completion refresh in
+            # `run_service.complete_plan` re-posts the comment with the real
+            # counts anyway, so a dropped enqueue here costs the "queued"
+            # snapshot, not the comment.
+            try:
                 await enqueue_trigger(
                     "vcs_status_comment_update",
                     {"session_id": str(sess.id)},
                     dedup_key=f"vcs_status:{sess.id}",
+                )
+            except Exception as e:
+                logger.warning(
+                    "Failed to enqueue PR status-comment refresh",
+                    pr_number=pr.number,
+                    workspace=ws.name,
+                    error=repr(e),
                 )
             await db.commit()
             logger.info(

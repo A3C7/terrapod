@@ -63,6 +63,38 @@ workspace lock released
 
 If a user pushes a new commit before apply, the existing run is canceled and a new full run is created — same workspace lock, new plan, new tfplan.
 
+### What the status comment says
+
+Terrapod posts a **PR-level status comment** and edits it in place, so the thread stays readable no matter how many times you push. It appears in **both** workflow modes, and it is refreshed as each piece of evidence lands — the resource counts, the gate verdicts and the cost estimate reach the API in three separate uploads, so the comment converges rather than appearing complete at once. It carries one row per affected workspace:
+
+| Workspace | Plan | Cost Δ | Apply | Mergeable |
+|---|---|---|---|---|
+| [`prod-network`](#) | +3 ~1 -2 | +412 GBP/mo | not applied | yes |
+| [`demo-network`](#) | +3 | +11 GBP/mo | will apply on merge | yes |
+
+Each workspace name links to its run. The comment ends with an `*Updated <timestamp>*` line: refreshes are best-effort by design — a failed enqueue is logged rather than failing the run — so the timestamp is how you tell a current row from a stale one.
+
+- **Plan** — the add / change / destroy counts from the plan. A run whose plan did not finish shows its status word (`queued`, `running`, `errored`) instead, and a run with no recorded counts falls back to `changes`.
+- **Cost Δ** — the **monthly delta this run introduces**, not the workspace's projected total: what merging costs, positive or negative. A priced plan that changes no spend says `no change`; `—` means the run produced no cost estimate (cost estimation off, or the plan never finished). The same figures are in the run's `cost-estimate` artifact.
+- **Apply** / **Mergeable** — where the run stands, and whether the VCS side will let it merge (see *Troubleshooting* for a blocked mergeability check).
+
+Below the table, each workspace with gates that can actually block gets a collapsed block naming every one of them and how it ruled:
+
+```
+▸ prod-network — blocked by policy
+    🟢 post-plan tasks — run-task, mandatory
+    🔴 prod-guardrails — policy, mandatory
+    🟢 security scan — security-scan, enforced
+```
+
+Gates appear in the order the run evaluates them — run tasks, then policy sets, then the security scan — so the first failing one is the same gate the run's `blocked-by` attribute names. Passing gates are listed too: the comment is an attestation of what was checked, not only an alarm. Advisory policy sets and advisory scans are left out, because they cannot hold a run; read their findings on the run page. A gate that was **overridden** shows as passed, with its name still listed so the override stays visible in the PR.
+
+A workspace whose mandatory gate failed is **not** offered an apply — `terrapod apply` would be refused while the gate holds the run. Override the gate (or fix the finding and push), and the next comment update offers it.
+
+This PR-level comment sits **alongside** the per-workspace comment Terrapod already posts (`### Terrapod — <workspace>`), which carries the run link and, when the AI plan summary is enabled, its collapsed summary and risk factors. The two are complementary: the per-workspace comment explains one run, the table rolls up every workspace the PR touches. A PR that touches no workspace gets neither.
+
+To keep Terrapod off PRs that change nothing it manages, set `trigger_prefixes` (or `working_directory`) on the workspace: a PR touching no matching path never creates a run at all, so it costs no plan and produces no comment.
+
 ### Lock semantics — this is the tradeoff
 
 While a PR's run sits in `planned`, the **workspace is locked**. A second PR touching the same workspace can't plan until the first PR is merged, discarded, or its run is canceled. The PR comment thread explains the wait.
