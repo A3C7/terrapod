@@ -893,15 +893,27 @@ async def _poll_workspace_prs(
     """Check open PRs/MRs targeting the tracked branch for speculative plans."""
     prs = await _list_open_prs(conn, owner, repo, branch, meta=meta)
 
-    # Hook-and-poll fallbacks (#282). Only run for apply-then-merge —
-    # default-mode PR runs are plan-only and don't drive any of this.
+    # Hook-and-poll fallbacks (#282).
+    #
+    # PR-closed reconciliation runs in BOTH modes, because both now create the
+    # PRSession it closes (the PR status comment hangs off that row). Leaving
+    # it apply-then-merge-only stranded every merge-then-apply session at
+    # `state='open'` for good. It also cancels the closed PR's speculative
+    # runs, which is work nobody is waiting for any more.
+    #
+    # Depends on #1760, which scopes the cancel inside that function to the
+    # repository whose PR closed. Without it, reaching this code from every
+    # workspace rather than only apply-then-merge ones turns a latent
+    # cross-repository collision into a likely one.
+    open_pr_numbers = {pr.number for pr in prs}
+    await _reconcile_closed_pr_sessions(db, conn, f"{owner}/{repo}", open_pr_numbers)
+
     if ws.vcs_workflow == "apply_then_merge":
-        open_pr_numbers = {pr.number for pr in prs}
-        # PR-closed: cancel runs, release workspace locks.
-        await _reconcile_closed_pr_sessions(db, conn, f"{owner}/{repo}", open_pr_numbers)
-        # Comment polling: dispatch any new `terrapod ...` commands the
-        # webhook either didn't deliver (no subscription, firewall) or
-        # raced with this poll cycle (dedup key in dispatcher handles the race).
+        # Comment polling stays apply-then-merge only: it dispatches
+        # `terrapod ...` commands, and those drive applies, which default-mode
+        # PR runs do not do. Covers a webhook the provider didn't deliver (no
+        # subscription, firewall) or one that raced this poll cycle (the
+        # dispatcher's dedup key handles the race).
         await _poll_pr_comments(db, conn, f"{owner}/{repo}")
 
     for pr in prs:

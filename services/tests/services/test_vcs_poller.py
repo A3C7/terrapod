@@ -1393,6 +1393,13 @@ class TestPollWorkspacePassesMetadataCacheCorrectly:
 
         mock_db = AsyncMock()
         mock_db.get.return_value = conn
+        # Closed-PR reconciliation queries the DB even on a no-op cycle, so the
+        # execute() result needs the real shape; a bare AsyncMock returns a
+        # coroutine from .scalars(). Empty result keeps this a clean no-op.
+        empty = MagicMock()
+        empty.scalars.return_value.all.return_value = []
+        empty.scalar_one_or_none.return_value = None
+        mock_db.execute.return_value = empty
 
         meta = VCSMetadataCache()
         paths_unions = {(conn.id, "org", "repo"): ["environments/dev"]}
@@ -1838,3 +1845,74 @@ class TestPRSessionIsCreatedInBothModes:
         upsert.assert_awaited_once()
         triggers = [c.args[0] for c in enqueue.await_args_list]
         assert "vcs_status_comment_update" in triggers
+
+
+class TestClosedPRSessionsAreReconciledInBothModes:
+    """A session created in either mode has to be closed in either mode.
+
+    The PRSession is now upserted for merge_then_apply too (it is what the PR
+    status comment hangs off). Reconciliation stayed apply_then_merge-only,
+    which left those rows at `state='open'` forever.
+
+    Widening it is only safe once the cancel query is scoped to the
+    repository, which is a pre-existing defect fixed separately in #1760 —
+    this change depends on that one landing first, or it turns a latent
+    cross-repository collision into a likely one.
+    """
+
+    def _session(self, pr_number=7):
+        sess = MagicMock()
+        sess.pr_number = pr_number
+        sess.state = "open"
+        return sess
+
+    def _db(self, sessions, active_runs):
+        """First execute() returns the open sessions, the rest the active runs."""
+        db = AsyncMock()
+        sess_result = MagicMock()
+        sess_result.scalars.return_value.all.return_value = sessions
+        run_result = MagicMock()
+        run_result.scalars.return_value.all.return_value = active_runs
+        db.execute = AsyncMock(side_effect=[sess_result] + [run_result] * 8)
+        return db
+
+    async def test_a_closed_pr_closes_its_session(self):
+        from terrapod.services.vcs_poller import _reconcile_closed_pr_sessions
+
+        sess = self._session()
+        db = self._db([sess], [])
+        await _reconcile_closed_pr_sessions(db, _mock_connection(), "org/repo", set())
+        assert sess.state == "closed"
+
+    async def test_a_still_open_pr_is_left_alone(self):
+        from terrapod.services.vcs_poller import _reconcile_closed_pr_sessions
+
+        sess = self._session()
+        db = self._db([sess], [])
+        await _reconcile_closed_pr_sessions(db, _mock_connection(), "org/repo", {7})
+        assert sess.state == "open"
+
+    async def test_merge_then_apply_reaches_reconciliation(self):
+        """The mode gate no longer decides whether sessions get cleaned up."""
+        from terrapod.services.vcs_poller import _poll_workspace_prs
+
+        ws = _mock_workspace()
+        ws.vcs_workflow = "merge_then_apply"
+        db = AsyncMock()
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = None
+        result.scalars.return_value.all.return_value = []
+        db.execute.return_value = result
+
+        with (
+            patch("terrapod.services.vcs_poller._list_open_prs", AsyncMock(return_value=[])),
+            patch(
+                "terrapod.services.vcs_poller._reconcile_closed_pr_sessions", AsyncMock()
+            ) as reconcile,
+            patch("terrapod.services.vcs_poller._poll_pr_comments", AsyncMock()) as comments,
+        ):
+            await _poll_workspace_prs(db, ws, _mock_connection(), "org", "repo", "main")
+
+        reconcile.assert_awaited_once()
+        # Comment-command polling drives applies, so it stays apply-then-merge only.
+        comments.assert_not_awaited()
