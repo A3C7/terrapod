@@ -1591,6 +1591,29 @@ class RateLimitConfig(BaseModel):
             "genuinely fronts more distinct API clients than this. 0 = unlimited."
         ),
     )
+    trusted_proxy_cidrs: list[str] = Field(
+        default_factory=lambda: [
+            "10.0.0.0/8",
+            "172.16.0.0/12",
+            "192.168.0.0/16",
+            "100.64.0.0/10",
+            "fd00::/8",
+        ],
+        description=(
+            "Proxy addresses or CIDRs whose X-Forwarded-For may be believed. "
+            "The header is caller-supplied data, so it is read ONLY when the "
+            "connecting peer is listed here; the client is then the right-most "
+            "entry that is not itself a listed proxy. Defaults to the private "
+            "ranges plus the CGNAT/Tailscale range, because in Terrapod the peer "
+            "is ALWAYS an in-cluster BFF pod — every request reaches the API "
+            "through the Next.js proxy by architectural rule — so this trusts "
+            "our own component and nothing publicly routable. An empty list is "
+            "supported and means 'ignore the header, bucket on the peer', but "
+            "since that peer is one BFF pod it collapses every unauthenticated "
+            "caller into a single shared bucket. Only sound if your ingress "
+            "sanitises X-Forwarded-For — see docs/rate-limiting.md."
+        ),
+    )
 
 
 # --- Metrics Configuration ---
@@ -2920,11 +2943,14 @@ class DatabaseConfig(BaseModel):
     ssl_mode: str = Field(
         default="",
         description=(
-            "TLS mode for cloud-IAM auth: 'require' (encrypt, no cert check — "
-            "the default when empty), 'verify-ca' (verify the server cert chain) "
-            "or 'verify-full' (verify chain + hostname). 'verify-ca'/'verify-full' "
-            "require ssl_root_cert (or a system-trusted CA). Cloud IAM auth always "
-            "uses at least 'require'. Ignored when auth_mode='password'."
+            "TLS mode for cloud-IAM auth: 'verify-full' (verify chain + hostname "
+            "— the DEFAULT when empty), 'verify-ca' (verify the chain only) or "
+            "'require' (encrypt without verifying the server). 'verify-ca' and "
+            "'verify-full' need ssl_root_cert, or a CA the system already trusts. "
+            "The default verifies because IAM auth sends the cloud token AS THE "
+            "PASSWORD, so an unverified peer harvests a live credential; set "
+            "'require' explicitly to restore the pre-2.0 behaviour. Ignored when "
+            "auth_mode='password'."
         ),
     )
     ssl_root_cert: str = Field(

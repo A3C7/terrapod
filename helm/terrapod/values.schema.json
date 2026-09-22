@@ -1062,6 +1062,18 @@
       "properties": {
         "enabled": {
           "type": "boolean"
+        },
+        "web": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ingressFrom": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
         }
       }
     },
@@ -2527,6 +2539,12 @@
             "distinct_credentials_per_minute": {
               "type": "integer",
               "minimum": 0
+            },
+            "trusted_proxy_cidrs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         },
